@@ -1,0 +1,2063 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>舊衣重生工坊：AI 永續改造企劃 | Upcycle Studio AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        paper: '#F7F4EC',
+                        paperDark: '#ECE6D5',
+                        denim: '#2B4C7E',
+                        denimDark: '#1D3557',
+                        moss: '#3D6B52',
+                        mossLight: '#5C8D73',
+                        terracotta: '#D96B43',
+                        ochre: '#C8963E',
+                        ink: '#24221F',
+                        mutedInk: '#686259'
+                    },
+                    fontFamily: {
+                        serif: ['"Noto Serif TC"', 'serif'],
+                        sans: ['"Noto Sans TC"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #F7F4EC;
+            color: #24221F;
+            font-family: 'Noto Sans TC', sans-serif;
+            background-image: 
+                radial-gradient(#D5CEBE 0.8px, transparent 0.8px),
+                radial-gradient(#D5CEBE 0.8px, #F7F4EC 0.8px);
+            background-size: 26px 26px;
+            background-position: 0 0, 13px 13px;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        /* 雜誌手作紙膠帶效果 */
+        .washi-tape {
+            background-color: rgba(200, 150, 62, 0.35);
+            border-left: 2px dashed rgba(255, 255, 255, 0.6);
+            border-right: 2px dashed rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(1px);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        /* 裁縫墊網格背景 */
+        .cutting-mat {
+            background-color: #E7ECE8;
+            background-image: 
+                linear-gradient(to right, rgba(61, 107, 82, 0.11) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(61, 107, 82, 0.11) 1px, transparent 1px),
+                linear-gradient(to right, rgba(61, 107, 82, 0.22) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(61, 107, 82, 0.22) 1px, transparent 1px);
+            background-size: 20px 20px, 20px 20px, 100px 100px, 100px 100px;
+        }
+
+        /* 拖曳物件游標 */
+        .draggable-item {
+            cursor: grab;
+        }
+        .draggable-item:active {
+            cursor: grabbing;
+        }
+
+        /* AI 解析掃描光波 */
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(450%); }
+        }
+        .ai-scan {
+            animation: scanline 1.5s ease-in-out infinite;
+        }
+
+        /* 自訂捲軸 */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #ECE6D5; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #B5AC9A; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #8C8272; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- 全局 SVG 紋理與花紋庫 -->
+    <svg width="0" height="0" class="hidden" aria-hidden="true">
+        <defs>
+            <!-- 基礎花紋疊加層 (可與任何基底色或染劑色疊加) -->
+            <!-- 1. 水洗刷舊紋理 -->
+            <pattern id="overlay-acid-wash" width="30" height="30" patternUnits="userSpaceOnUse">
+                <circle cx="8" cy="10" r="6" fill="#FFFFFF" opacity="0.14"/>
+                <circle cx="22" cy="22" r="8" fill="#FFFFFF" opacity="0.12"/>
+                <circle cx="24" cy="6" r="4" fill="#000000" opacity="0.08"/>
+                <path d="M0 15 Q15 10 30 15" stroke="#FFFFFF" stroke-width="1.5" fill="none" opacity="0.18"/>
+            </pattern>
+
+            <!-- 2. 細條紋 -->
+            <pattern id="overlay-pinstripe" width="10" height="10" patternUnits="userSpaceOnUse">
+                <line x1="3" y1="0" x2="3" y2="10" stroke="#FFFFFF" stroke-width="1.2" opacity="0.35"/>
+                <line x1="8" y1="0" x2="8" y2="10" stroke="#000000" stroke-width="0.6" opacity="0.2"/>
+            </pattern>
+
+            <!-- 3. 經典格紋 -->
+            <pattern id="overlay-classic-check" width="28" height="28" patternUnits="userSpaceOnUse">
+                <rect x="0" y="0" width="14" height="28" fill="#000000" opacity="0.14"/>
+                <rect x="0" y="0" width="28" height="14" fill="#000000" opacity="0.14"/>
+                <line x1="7" y1="0" x2="7" y2="28" stroke="#F7F4EC" stroke-width="1" opacity="0.45"/>
+                <line x1="0" y1="7" x2="28" y2="7" stroke="#F7F4EC" stroke-width="1" opacity="0.45"/>
+            </pattern>
+
+            <!-- 4. 扎染雲霧 -->
+            <pattern id="overlay-tie-dye" width="44" height="44" patternUnits="userSpaceOnUse">
+                <circle cx="22" cy="22" r="18" fill="none" stroke="#FFFFFF" stroke-width="2.5" opacity="0.22"/>
+                <circle cx="22" cy="22" r="11" fill="none" stroke="#FFFFFF" stroke-width="2" opacity="0.28"/>
+                <circle cx="22" cy="22" r="4" fill="#FFFFFF" opacity="0.35"/>
+                <circle cx="0" cy="0" r="12" fill="none" stroke="#FFFFFF" stroke-width="2" opacity="0.18"/>
+            </pattern>
+
+            <!-- 台灣在地工藝拼布花紋 -->
+            <!-- 三峽藍染雲紋布 -->
+            <pattern id="pat-indigo-dye" width="40" height="40" patternUnits="userSpaceOnUse">
+                <rect width="40" height="40" fill="#183A5A" />
+                <circle cx="20" cy="20" r="16" fill="none" stroke="#4D80B3" stroke-width="3" opacity="0.75" />
+                <circle cx="20" cy="20" r="10" fill="none" stroke="#8EB8E5" stroke-width="2" opacity="0.85" />
+                <circle cx="20" cy="20" r="4" fill="#D9E8F5" opacity="0.95" />
+                <circle cx="0" cy="0" r="12" fill="none" stroke="#366491" stroke-width="2.5" opacity="0.6" />
+                <circle cx="40" cy="40" r="12" fill="none" stroke="#366491" stroke-width="2.5" opacity="0.6" />
+            </pattern>
+
+            <!-- 客家桐花/牡丹拼布 -->
+            <pattern id="pat-hakka-floral" width="36" height="36" patternUnits="userSpaceOnUse">
+                <rect width="36" height="36" fill="#C92A3E" />
+                <circle cx="18" cy="18" r="11" fill="#F26B8A" />
+                <circle cx="18" cy="18" r="7" fill="#FAD2E1" />
+                <circle cx="18" cy="18" r="3" fill="#F4A226" />
+                <ellipse cx="6" cy="8" rx="5" ry="2.5" transform="rotate(-30 6 8)" fill="#2D6A4F" />
+                <ellipse cx="30" cy="28" rx="5" ry="2.5" transform="rotate(-30 30 28)" fill="#2D6A4F" />
+                <circle cx="6" cy="30" r="2" fill="#FFD166" />
+                <circle cx="30" cy="6" r="2" fill="#FFD166" />
+            </pattern>
+
+            <!-- 原民幾何織帶 -->
+            <pattern id="pat-indigenous-weave" width="24" height="24" patternUnits="userSpaceOnUse">
+                <rect width="24" height="24" fill="#1F1D1B" />
+                <polygon points="12,2 22,12 12,22 2,12" fill="none" stroke="#D93829" stroke-width="2.5" />
+                <polygon points="12,7 17,12 12,17 7,12" fill="#F4F1EA" />
+                <circle cx="12" cy="12" r="2" fill="#D93829" />
+                <line x1="0" y1="1" x2="24" y2="1" stroke="#E09F3E" stroke-width="1.5" />
+                <line x1="0" y1="23" x2="24" y2="23" stroke="#E09F3E" stroke-width="1.5" />
+            </pattern>
+
+            <!-- 回收丹寧格紋布 -->
+            <pattern id="pat-recycled-denim" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                <rect width="16" height="16" fill="#5D84A6" />
+                <line x1="0" y1="0" x2="0" y2="16" stroke="#85A9C7" stroke-width="4" />
+                <line x1="8" y1="0" x2="8" y2="16" stroke="#3B5D7A" stroke-width="3" />
+                <line x1="0" y1="8" x2="16" y2="8" stroke="#F7F4EC" stroke-width="1" stroke-dasharray="2,2" />
+            </pattern>
+
+            <!-- 台灣薯榔大地褐布 -->
+            <pattern id="pat-yam-dye" width="20" height="20" patternUnits="userSpaceOnUse">
+                <rect width="20" height="20" fill="#7F4F24" />
+                <path d="M0 10 Q5 5 10 10 T20 10" fill="none" stroke="#A66A38" stroke-width="2" />
+                <circle cx="5" cy="16" r="1.5" fill="#582F0E" opacity="0.6" />
+                <circle cx="15" cy="4" r="1.5" fill="#B08968" opacity="0.6" />
+            </pattern>
+        </defs>
+    </svg>
+
+    <!-- 頂部導覽列 (進入階段 1~5 時顯示) -->
+    <header id="app-header" class="hidden bg-paper/95 backdrop-blur-sm border-b-2 border-stone-300 sticky top-0 z-40 px-3 sm:px-6 py-2.5 shadow-xs">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+            <!-- 品牌 Logo 返回封面 -->
+            <button onclick="goToStage(0)" class="flex items-center gap-2.5 text-left group cursor-pointer">
+                <div class="w-9 h-9 rounded-xl bg-denim text-paper flex items-center justify-center shadow-inner border border-stone-400 group-hover:bg-denimDark transition">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 3L3 18M15 3h6v6M9 21c-3.3 0-6-2.7-6-6 0-2.5 1.5-4.6 3.7-5.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="17" cy="7" r="1.5" fill="currentColor"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="font-serif font-bold text-base sm:text-lg text-ink leading-none">舊衣重生工坊</div>
+                    <div class="text-[10px] text-moss font-bold tracking-wider mt-0.5">UPCYCLE STUDIO AI</div>
+                </div>
+            </button>
+
+            <!-- 5 階段進度導覽 -->
+            <nav class="flex items-center gap-1 sm:gap-1.5 overflow-x-auto py-1">
+                <button onclick="goToStage(1)" id="nav-stage-1" class="px-2.5 py-1 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer">1. 選衣與細節</button>
+                <span class="text-stone-400 text-xs">›</span>
+                <button onclick="goToStage(2)" id="nav-stage-2" class="px-2.5 py-1 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer">2. 給 AI 提示詞</button>
+                <span class="text-stone-400 text-xs">›</span>
+                <button onclick="goToStage(3)" id="nav-stage-3" class="px-2.5 py-1 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer">3. AI 材料提案</button>
+                <span class="text-stone-400 text-xs">›</span>
+                <button onclick="goToStage(4)" id="nav-stage-4" class="px-2.5 py-1 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer">4. 自由改造台</button>
+                <span class="text-stone-400 text-xs">›</span>
+                <button onclick="goToStage(5)" id="nav-stage-5" class="px-2.5 py-1 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer">5. 永續結算</button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- 全域提示訊息 Toast -->
+    <div id="toast-box" class="fixed bottom-5 right-5 z-50 transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="bg-ink text-paper px-4 py-3 rounded-2xl shadow-xl border border-stone-600 flex items-center gap-2.5 max-w-sm">
+            <span id="toast-icon" class="text-ochre text-base">✦</span>
+            <p id="toast-msg" class="text-xs sm:text-sm font-medium leading-snug"></p>
+        </div>
+    </div>
+
+    <!-- =========================================================================
+         階段 0：雜誌封面主畫面 (Cover Screen)
+         ========================================================================= -->
+    <main id="stage-0" class="flex-1 flex items-center justify-center p-4 sm:p-8">
+        <div class="max-w-5xl w-full bg-paper rounded-3xl shadow-2xl border-2 border-stone-300 overflow-hidden relative">
+            <!-- 頂部雜誌刊頭 -->
+            <div class="bg-denim text-paper px-6 py-2.5 flex flex-wrap justify-between items-center text-[11px] tracking-widest uppercase border-b border-stone-400 gap-2">
+                <span>TAIWAN TEXTILE CRAFT × AI UPCYCLE LAB</span>
+                <span>VOL. 2026 — PLAYER-DRIVEN CIRCULAR DESIGN</span>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12">
+                <!-- 左側雜誌主標與設計引言 -->
+                <div class="lg:col-span-7 p-6 sm:p-10 flex flex-col justify-between relative">
+                    <div>
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-moss/15 text-moss border border-moss/30 text-xs font-bold mb-4">
+                            <span>🌿 永續手作與 AI 協作企劃</span>
+                            <span>•</span>
+                            <span>由你定義舊衣的第二人生</span>
+                        </div>
+
+                        <h1 class="font-serif font-black text-3xl sm:text-5xl text-ink leading-tight mb-4">
+                            舊衣重生工坊：<br>
+                            <span class="text-denim">AI 永續改造企劃</span>
+                        </h1>
+
+                        <blockquote class="border-l-4 border-terracotta pl-4 py-1 my-4 bg-paperDark/60 rounded-r-xl pr-3">
+                            <p class="font-serif italic text-sm sm:text-base text-ink leading-relaxed">
+                                「沒有真正的廢棄衣物，只有尚未被賦予新靈魂的織物。挑選你的舊衣、寫下你的創意提示詞，讓 AI 化身台灣在地工藝顧問，與你一起完成零廢棄重製！」
+                            </p>
+                        </blockquote>
+
+                        <!-- 五階段玩家主導流程概覽 -->
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 my-6">
+                            <div class="bg-white/80 p-3 rounded-2xl border border-stone-300 shadow-2xs">
+                                <div class="text-lg mb-1">👕</div>
+                                <div class="font-bold text-xs text-ink">1. 自選舊衣細節</div>
+                                <div class="text-[11px] text-mutedInk mt-0.5">版型、布料、花紋與破損狀態</div>
+                            </div>
+                            <div class="bg-white/80 p-3 rounded-2xl border border-stone-300 shadow-2xs">
+                                <div class="text-lg mb-1">✍️</div>
+                                <div class="font-bold text-xs text-ink">2. 下達主題提示</div>
+                                <div class="text-[11px] text-mutedInk mt-0.5">由你寫下改造風格與需求給 AI</div>
+                            </div>
+                            <div class="bg-white/80 p-3 rounded-2xl border border-stone-300 shadow-2xs">
+                                <div class="text-lg mb-1">🤖</div>
+                                <div class="font-bold text-xs text-ink">3. AI 材料包提案</div>
+                                <div class="text-[11px] text-mutedInk mt-0.5">推薦天然染料、拼布與配件包</div>
+                            </div>
+                            <div class="bg-white/80 p-3 rounded-2xl border border-stone-300 shadow-2xs">
+                                <div class="text-lg mb-1">✂️</div>
+                                <div class="font-bold text-xs text-ink">4. 自由改造結算</div>
+                                <div class="text-[11px] text-mutedInk mt-0.5">拖曳拼貼與正負向環境評估</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-4 pt-2">
+                        <button onclick="goToStage(1)" class="px-8 py-4 rounded-2xl bg-denim hover:bg-denimDark text-white font-bold text-base sm:text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all flex items-center gap-3 cursor-pointer">
+                            <span>進入工坊開始改造</span>
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                        </button>
+                        <div class="text-xs text-mutedInk">
+                            <span class="block font-bold text-moss">✓ 支援自由輸入主題詞與提示詞</span>
+                            <span>✓ 支援滑鼠與觸控拖曳、縮放、旋轉拼布</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右側工坊設計徽章與拼貼插畫區 -->
+                <div class="lg:col-span-5 bg-denim/10 border-t lg:border-t-0 lg:border-l border-stone-300 p-6 flex flex-col items-center justify-center relative overflow-hidden">
+                    <!-- 裝飾紙膠帶 -->
+                    <div class="washi-tape w-28 h-6 absolute top-4 left-6 -rotate-6"></div>
+                    <div class="washi-tape w-24 h-6 absolute bottom-6 right-6 rotate-6"></div>
+
+                    <div class="absolute top-4 right-5 bg-terracotta text-white text-[11px] font-bold px-3 py-1 rounded-full shadow rotate-3">
+                        ZERO-WASTE LAB
+                    </div>
+
+                    <!-- 工坊專屬拼貼徽章 SVG -->
+                    <svg viewBox="0 0 320 350" class="w-full max-w-[270px] drop-shadow-xl">
+                        <!-- 外圈圓形印章 -->
+                        <circle cx="160" cy="175" r="138" fill="#ECE6D5" stroke="#3D6B52" stroke-width="2.5" stroke-dasharray="6,4" />
+                        <circle cx="160" cy="175" r="126" fill="none" stroke="#2B4C7E" stroke-width="1" />
+
+                        <!-- 重製拼接外套主插畫 -->
+                        <g transform="translate(40, 35)">
+                            <!-- 左半邊丹寧 -->
+                            <path d="M50,20 L120,20 L120,265 L45,265 L35,120 L15,130 L5,95 L45,45 Z" fill="#2B4C7E" stroke="#1D3557" stroke-width="2.5"/>
+                            <!-- 右半邊三峽藍染雲紋 -->
+                            <path d="M120,20 L190,20 L195,45 L235,95 L225,130 L205,120 L195,265 L120,265 Z" fill="url(#pat-indigo-dye)" stroke="#1D3557" stroke-width="2.5"/>
+                            <!-- 中央手工縫線 -->
+                            <line x1="120" y1="20" x2="120" y2="265" stroke="#F7F4EC" stroke-width="2" stroke-dasharray="5,3"/>
+                            <!-- 領口 -->
+                            <path d="M85,20 Q120,52 155,20" fill="#ECE6D5" stroke="#1D3557" stroke-width="2.5"/>
+                            <!-- 客家花布口袋 -->
+                            <rect x="60" y="92" width="42" height="46" rx="4" fill="url(#pat-hakka-floral)" stroke="#F7F4EC" stroke-width="1.5" stroke-dasharray="3,2"/>
+                            <!-- 原民幾何織帶 -->
+                            <rect x="122" y="180" width="72" height="18" fill="url(#pat-indigenous-weave)"/>
+                            <!-- 黃銅鈕扣 -->
+                            <circle cx="120" cy="75" r="5" fill="#C8963E" stroke="#5C3D12" stroke-width="1.5"/>
+                            <circle cx="120" cy="115" r="5" fill="#C8963E" stroke="#5C3D12" stroke-width="1.5"/>
+                            <circle cx="120" cy="155" r="5" fill="#C8963E" stroke="#5C3D12" stroke-width="1.5"/>
+                            <!-- 手工十字刺繡 -->
+                            <g transform="translate(155, 82)" stroke="#F4D35E" stroke-width="2.5" stroke-linecap="round">
+                                <line x1="-8" y1="-8" x2="8" y2="8"/>
+                                <line x1="8" y1="-8" x2="-8" y2="8"/>
+                                <circle cx="0" cy="0" r="3" fill="#D96B43" stroke="none"/>
+                            </g>
+                        </g>
+
+                        <!-- 底部徽章緞帶 -->
+                        <rect x="65" y="278" width="190" height="28" rx="14" fill="#3D6B52" stroke="#F7F4EC" stroke-width="1.5"/>
+                        <text x="160" y="296" text-anchor="middle" fill="#F7F4EC" font-size="11" font-weight="bold" letter-spacing="1.5">CRAFTED BY YOU &amp; AI</text>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- =========================================================================
+         階段 1：玩家挑選舊衣與細節設定 (Garment & Material Setup)
+         ========================================================================= -->
+    <section id="stage-1" class="hidden flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            <!-- 左側：即時向量服飾剪影預覽卡 (5 cols) -->
+            <div class="lg:col-span-5 bg-white/95 rounded-3xl p-5 sm:p-6 shadow-md border border-stone-300 sticky top-20">
+                <div class="flex items-center justify-between border-b border-stone-200 pb-3 mb-4">
+                    <div>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-moss">STEP 01 · BASE GARMENT</span>
+                        <h2 class="font-serif font-bold text-lg text-ink">待改造舊衣即時預覽</h2>
+                    </div>
+                    <span id="preview-eco-badge" class="text-xs font-bold px-2.5 py-1 rounded-full bg-moss/15 text-moss">天然純棉基底</span>
+                </div>
+
+                <!-- 即時預覽 SVG 畫布 -->
+                <div class="cutting-mat w-full aspect-[4/4.1] max-h-[380px] rounded-2xl border-2 border-moss/25 flex items-center justify-center relative overflow-hidden">
+                    <svg id="stage1-preview-svg" viewBox="0 0 400 420" class="w-full h-full">
+                        <g id="stage1-garment-layer"></g>
+                        <g id="stage1-damage-layer"></g>
+                    </svg>
+                    <div class="absolute bottom-2.5 left-3 right-3 bg-white/85 backdrop-blur-xs px-3 py-1.5 rounded-xl border border-stone-300 text-[11px] text-ink flex justify-between">
+                        <span id="preview-summary-left" class="font-bold">寬版丹寧褲 · 純棉丹寧</span>
+                        <span id="preview-summary-right" class="text-terracotta font-medium">膝蓋/下擺磨損破洞</span>
+                    </div>
+                </div>
+
+                <p class="text-xs text-mutedInk mt-3 leading-relaxed">
+                    💡 <strong>提示：</strong>不同布料材質與破損位置，將會影響下一步 AI 為你推薦的修補工藝與最終環境永續評估分數！
+                </p>
+            </div>
+
+            <!-- 右側：4 個維度的細項選擇器 (7 cols) -->
+            <div class="lg:col-span-7 bg-white/95 rounded-3xl p-5 sm:p-6 shadow-md border border-stone-300 space-y-6">
+                <div class="border-b border-stone-200 pb-3">
+                    <h3 class="font-serif font-bold text-xl text-ink">設定你要改造的舊衣細節</h3>
+                    <p class="text-xs text-mutedInk mt-0.5">請從衣櫃中挑選一件舊衣物，設定它的版型、材質、原始花紋與目前的舊化狀況</p>
+                </div>
+
+                <!-- 維度 1：服飾種類 -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-denim mb-2">1. 服飾種類 (Garment Type)</label>
+                    <div id="opt-garments" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5"></div>
+                </div>
+
+                <!-- 維度 2：布料材質 -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-denim mb-2">2. 布料材質 (Fabric Material)</label>
+                    <div id="opt-fabrics" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
+                </div>
+
+                <!-- 維度 3：布料花紋與底色 -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-denim mb-2">3. 布料花紋與底色 (Pattern &amp; Base Tone)</label>
+                    <div id="opt-patterns" class="grid grid-cols-2 sm:grid-cols-5 gap-2"></div>
+                </div>
+
+                <!-- 維度 4：破損與舊化狀況 -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-denim mb-2">4. 破損與舊化狀況 (Wear &amp; Tear Condition)</label>
+                    <div id="opt-damages" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
+                </div>
+
+                <!-- 下一步按鈕 -->
+                <div class="pt-4 border-t border-stone-200 flex justify-end">
+                    <button onclick="goToStage(2)" class="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-denim hover:bg-denimDark text-white font-bold text-sm shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2 cursor-pointer">
+                        <span>確認舊衣細節，前往下達 AI 提示詞</span>
+                        <span>→</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =========================================================================
+         階段 2：玩家下達主題詞與提示詞給 AI (Player Prompt to AI)
+         ========================================================================= -->
+    <section id="stage-2" class="hidden flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6">
+        <div class="bg-white/95 rounded-3xl p-6 sm:p-8 shadow-xl border-2 border-stone-300 relative overflow-hidden">
+            
+            <!-- AI 思考解析覆蓋動畫 (點擊送出後顯示) -->
+            <div id="ai-thinking-modal" class="hidden absolute inset-0 z-30 bg-denimDark/95 backdrop-blur-md flex flex-col items-center justify-center text-paper p-6 text-center">
+                <div class="w-full h-1 bg-ochre shadow-[0_0_18px_#C8963E] absolute top-0 left-0 ai-scan"></div>
+                <div class="text-5xl mb-4 animate-bounce">🤖🧵</div>
+                <h3 class="font-serif font-bold text-2xl text-amber-200 mb-2">AI 永續工藝設計師正在解析你的指令...</h3>
+                <p id="ai-thinking-step" class="text-sm text-paper/90 max-w-md mb-4">正在讀取主題詞語意與布料纖維特性...</p>
+                <div class="w-64 h-2 bg-white/20 rounded-full overflow-hidden">
+                    <div id="ai-thinking-bar" class="h-full bg-ochre transition-all duration-300" style="width: 15%"></div>
+                </div>
+            </div>
+
+            <!-- 頂部已選舊衣摘要條 -->
+            <div class="bg-paperDark rounded-2xl p-3.5 border border-stone-300 mb-6 flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2.5 text-xs sm:text-sm">
+                    <span class="bg-denim text-white font-bold px-2.5 py-1 rounded-lg">已選舊衣</span>
+                    <span id="stage2-garment-summary" class="font-bold text-ink">寬版丹寧褲 · 純棉丹寧 · 水洗刷舊 · 膝蓋磨損破洞</span>
+                </div>
+                <button onclick="goToStage(1)" class="text-xs text-denim hover:underline font-bold cursor-pointer">✎ 修改舊衣細節</button>
+            </div>
+
+            <div class="mb-6">
+                <span class="text-xs font-bold uppercase tracking-wider text-terracotta">STEP 02 · YOUR CREATIVE PROMPT</span>
+                <h2 class="font-serif font-bold text-2xl sm:text-3xl text-ink mt-1">向 AI 設計師下達你的改造構想</h2>
+                <p class="text-xs sm:text-sm text-mutedInk mt-1">
+                    告訴 AI 你想要的風格主題詞與具體改造方向，AI 將為你匹配最適合的<strong>天然染劑、零廢棄剪裁藍圖</strong>與<strong>台灣在地工藝拼貼材料包</strong>！
+                </p>
+            </div>
+
+            <div class="space-y-6">
+                <!-- 1. 改造主題詞 (Theme Tag) -->
+                <div>
+                    <label for="input-theme-tag" class="block text-sm font-bold text-ink mb-2">
+                        1. 輸入或點選「改造主題詞 (Theme Tag)」
+                    </label>
+                    <input id="input-theme-tag" type="text" value="#台灣在地工藝" placeholder="例如：#台灣在地工藝、#Y2K千禧辣妹、#極簡日系無印..." 
+                           class="w-full px-4 py-3 rounded-2xl bg-paper border-2 border-stone-300 focus:border-denim focus:outline-none font-bold text-denim text-base shadow-inner">
+                    
+                    <!-- 快速主題詞標籤 -->
+                    <div class="mt-2.5 flex flex-wrap items-center gap-2">
+                        <span class="text-xs text-mutedInk">快速填入主題：</span>
+                        <button type="button" onclick="setThemeTag('#台灣在地工藝')" class="px-3 py-1 rounded-full bg-moss/15 hover:bg-moss/25 text-moss text-xs font-bold transition cursor-pointer">#台灣在地工藝</button>
+                        <button type="button" onclick="setThemeTag('#Y2K千禧辣妹')" class="px-3 py-1 rounded-full bg-denim/15 hover:bg-denim/25 text-denim text-xs font-bold transition cursor-pointer">#Y2K千禧辣妹</button>
+                        <button type="button" onclick="setThemeTag('#山系機能工裝')" class="px-3 py-1 rounded-full bg-ochre/20 hover:bg-ochre/30 text-amber-900 text-xs font-bold transition cursor-pointer">#山系機能工裝</button>
+                        <button type="button" onclick="setThemeTag('#賽博龐克廢土')" class="px-3 py-1 rounded-full bg-terracotta/15 hover:bg-terracotta/25 text-terracotta text-xs font-bold transition cursor-pointer">#賽博龐克廢土</button>
+                        <button type="button" onclick="setThemeTag('#文青日系拼布')" class="px-3 py-1 rounded-full bg-stone-200 hover:bg-stone-300 text-ink text-xs font-bold transition cursor-pointer">#文青日系拼布</button>
+                    </div>
+                </div>
+
+                <!-- 2. 改造提示詞 (Design Prompt) -->
+                <div>
+                    <label for="input-design-prompt" class="block text-sm font-bold text-ink mb-2">
+                        2. 撰寫「改造提示詞 (Design Prompt)」描述具體改造方向
+                    </label>
+                    <textarea id="input-design-prompt" rows="3" placeholder="描述你想如何處理破損、偏好的染料顏色、剪裁版型或想要的拼布配件..." 
+                              class="w-full px-4 py-3 rounded-2xl bg-paper border-2 border-stone-300 focus:border-denim focus:outline-none text-sm text-ink leading-relaxed shadow-inner">希望把破洞修補好，加入三峽藍染的層次感，版型俐落一點，並帶有一點手工刺繡與古布拼貼的溫度。</textarea>
+                    
+                    <!-- 快速靈感詞庫按鈕 -->
+                    <div class="mt-2.5">
+                        <span class="block text-xs text-mutedInk mb-1.5">點擊靈感詞彙追加到提示詞中：</span>
+                        <div class="flex flex-wrap gap-1.5">
+                            <button type="button" onclick="appendPromptSnippet('將破損處用拼布完美覆蓋修補')" class="px-2.5 py-1 rounded-xl bg-paperDark hover:bg-stone-300 border border-stone-300 text-xs text-ink transition cursor-pointer">+ 拼布覆蓋修補</button>
+                            <button type="button" onclick="appendPromptSnippet('加入三峽天然藍染與客家花布元素')" class="px-2.5 py-1 rounded-xl bg-paperDark hover:bg-stone-300 border border-stone-300 text-xs text-ink transition cursor-pointer">+ 藍染與客家花布</button>
+                            <button type="button" onclick="appendPromptSnippet('改造成俐落的短版 Crop 剪裁')" class="px-2.5 py-1 rounded-xl bg-paperDark hover:bg-stone-300 border border-stone-300 text-xs text-ink transition cursor-pointer">+ 短版 Crop 剪裁</button>
+                            <button type="button" onclick="appendPromptSnippet('搭配金屬蝴蝶貼與銀色別針走 Y2K 風格')" class="px-2.5 py-1 rounded-xl bg-paperDark hover:bg-stone-300 border border-stone-300 text-xs text-ink transition cursor-pointer">+ Y2K 金屬蝴蝶與別針</button>
+                            <button type="button" onclick="appendPromptSnippet('加上原民織帶、工裝插扣與可拆式口袋')" class="px-2.5 py-1 rounded-xl bg-paperDark hover:bg-stone-300 border border-stone-300 text-xs text-ink transition cursor-pointer">+ 原民織帶與工裝口袋</button>
+                            <button type="button" onclick="appendPromptSnippet('採用不對稱下擺解構設計')" class="px-2.5 py-1 rounded-xl bg-paperDark hover:bg-stone-300 border border-stone-300 text-xs text-ink transition cursor-pointer">+ 不對稱下擺解構</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 底部送出按鈕 -->
+                <div class="pt-4 border-t border-stone-200 flex flex-wrap items-center justify-between gap-3">
+                    <button onclick="goToStage(1)" class="px-5 py-3 rounded-2xl bg-stone-200 hover:bg-stone-300 text-ink font-bold text-sm transition cursor-pointer">
+                        ← 返回上一步
+                    </button>
+                    <button onclick="submitPromptToAI()" class="flex-1 sm:flex-initial px-8 py-4 rounded-2xl bg-moss hover:bg-emerald-800 text-white font-bold text-base shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2.5 cursor-pointer">
+                        <span>✨ 送出提示詞，交由 AI 設計師分析</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =========================================================================
+         階段 3：AI 生成專屬改造提案與材料包推薦 (AI Recommendation Blueprint)
+         ========================================================================= -->
+    <section id="stage-3" class="hidden flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6">
+        <div class="bg-white/95 rounded-3xl p-6 sm:p-8 shadow-xl border-2 border-denim/30 space-y-6">
+            
+            <!-- 頂部 AI 報告刊頭 -->
+            <div class="flex flex-wrap items-start justify-between gap-4 border-b border-stone-200 pb-4">
+                <div>
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-denim/10 text-denim text-xs font-bold mb-2">
+                        <span>🤖 AI 永續工藝分析完成</span>
+                        <span>•</span>
+                        <span id="blueprint-theme-badge">#台灣在地工藝</span>
+                    </div>
+                    <h2 class="font-serif font-bold text-2xl sm:text-3xl text-ink">專屬舊衣重製設計藍圖與材料包</h2>
+                    <p id="blueprint-prompt-quote" class="text-xs sm:text-sm text-mutedInk italic mt-1">「你的提示詞：...」</p>
+                </div>
+                <button onclick="goToStage(2)" class="px-4 py-2 rounded-xl bg-paperDark hover:bg-stone-300 text-xs font-bold text-ink border border-stone-300 transition cursor-pointer">
+                    ↻ 修改提示詞重新生成
+                </button>
+            </div>
+
+            <!-- AI 策略摘要卡片 (剪裁方向 + 推薦天然染料) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <!-- 1. AI 推薦剪裁方向 -->
+                <div class="bg-paper rounded-2xl p-5 border border-stone-300 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-denim uppercase">1. AI 推薦剪裁藍圖</span>
+                            <span id="bp-cut-waste-badge" class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-moss/15 text-moss">耗損率 4%</span>
+                        </div>
+                        <h3 id="bp-cut-title" class="font-serif font-bold text-lg text-ink mb-1.5">零廢棄拼布補丁法 (Zero-Waste Patchwork)</h3>
+                        <p id="bp-cut-desc" class="text-xs sm:text-sm text-mutedInk leading-relaxed"></p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-stone-200 flex items-center justify-between">
+                        <span class="text-xs text-ink font-medium">將此剪裁設為工作台預設版型</span>
+                        <span class="text-xs font-bold text-moss">✓ 已自動配置</span>
+                    </div>
+                </div>
+
+                <!-- 2. AI 推薦染料與工藝 (可點擊直接預覽套用) -->
+                <div class="bg-paper rounded-2xl p-5 border border-stone-300 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-moss uppercase">2. AI 推薦染劑與洗色工藝</span>
+                            <span class="text-xs text-mutedInk">點擊下方色票可套用</span>
+                        </div>
+                        <h3 id="bp-dye-title" class="font-serif font-bold text-lg text-ink mb-1.5">大菁天然藍染浸染 (Sanxia Indigo)</h3>
+                        <p id="bp-dye-desc" class="text-xs sm:text-sm text-mutedInk leading-relaxed mb-3"></p>
+                    </div>
+                    <!-- 推薦染料色票選擇 -->
+                    <div id="bp-dye-swatches" class="flex flex-wrap gap-2"></div>
+                </div>
+            </div>
+
+            <!-- 3. AI 精選材料包 (布料拼布 + 模組化配件) -->
+            <div class="bg-paperDark/70 rounded-2xl p-5 border border-stone-300">
+                <div class="mb-3">
+                    <span class="text-xs font-bold text-terracotta uppercase">3. AI 精選永續改造材料包 (Curated Kit)</span>
+                    <h3 class="font-serif font-bold text-lg text-ink">為你的主題詞量身挑選的布料與配件</h3>
+                    <p class="text-xs text-mutedInk">以下素材已為你打包送入工作台，你也可以在工作台中隨時切換「瀏覽全工坊材料庫」自由混搭！</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- 推薦布料拼布 -->
+                    <div class="bg-white rounded-2xl p-4 border border-stone-200">
+                        <div class="text-xs font-bold text-denim mb-2.5">🧵 推薦台灣在地工藝拼布</div>
+                        <div id="bp-fabrics-list" class="grid grid-cols-2 gap-2.5"></div>
+                    </div>
+                    <!-- 推薦模組化配件 -->
+                    <div class="bg-white rounded-2xl p-4 border border-stone-200">
+                        <div class="text-xs font-bold text-moss mb-2.5">🪡 推薦模組化配件與刺繡</div>
+                        <div id="bp-accessories-list" class="grid grid-cols-2 gap-2.5"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 進入階段 4 互動工作台按鈕 -->
+            <div class="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="text-xs text-mutedInk">
+                    進入工作台後，你可以<strong>自由拖曳移動、縮放、旋轉</strong>每一塊拼布與配件！
+                </div>
+                <button onclick="enterWorkbench()" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-denim hover:bg-denimDark text-white font-bold text-base shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2.5 cursor-pointer">
+                    <span>✂️ 帶著 AI 材料包進入 SVG 改造工作台</span>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- =========================================================================
+         階段 4：SVG 互動改造工作台 (Interactive Upcycle Workbench)
+         ========================================================================= -->
+    <section id="stage-4" class="hidden flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+            
+            <!-- 左欄：染劑調色盤 & 剪裁版型重塑 (3 cols) -->
+            <div class="lg:col-span-3 space-y-4">
+                <!-- 1. 天然染劑浸染選擇 -->
+                <div class="bg-white/95 rounded-3xl p-4 shadow-md border border-stone-300">
+                    <h3 class="font-serif font-bold text-sm text-ink mb-1">🎨 染劑與色調處理</h3>
+                    <p class="text-[11px] text-mutedInk mb-2.5">為舊衣進行植物染或洗色翻新</p>
+                    <div id="wb-dye-list" class="space-y-1.5"></div>
+                </div>
+
+                <!-- 2. 剪裁版型切換 -->
+                <div class="bg-white/95 rounded-3xl p-4 shadow-md border border-stone-300">
+                    <h3 class="font-serif font-bold text-sm text-ink mb-1">✂️ 剪裁版型重塑</h3>
+                    <p class="text-[11px] text-mutedInk mb-2.5">改變剪裁將直接影響布料耗損率</p>
+                    <div id="wb-cut-list" class="space-y-2"></div>
+                </div>
+
+                <!-- 玩家的提示詞備忘 -->
+                <div class="bg-paperDark rounded-2xl p-3.5 border border-stone-300 text-xs">
+                    <div class="font-bold text-denim mb-1">目標主題：<span id="wb-theme-memo"></span></div>
+                    <p id="wb-prompt-memo" class="text-mutedInk leading-snug line-clamp-3"></p>
+                </div>
+            </div>
+
+            <!-- 中央欄：高精細度 SVG 互動畫布與物件變形控制列 (6 cols) -->
+            <div class="lg:col-span-6 flex flex-col gap-3">
+                <div class="bg-white rounded-3xl p-3 sm:p-4 shadow-lg border-2 border-stone-300">
+                    
+                    <!-- 畫布頂部狀態與破損修補提示 -->
+                    <div class="flex flex-wrap items-center justify-between gap-2 pb-2.5 mb-2.5 border-b border-stone-200">
+                        <div class="flex items-center gap-2">
+                            <span id="repair-status-badge" class="text-xs font-bold px-2.5 py-1 rounded-full bg-terracotta/15 text-terracotta">
+                                ⚠️ 破損處尚未覆蓋修補
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="autoPlaceRecommendedPatches()" class="text-xs px-2.5 py-1 rounded-lg bg-denim/10 hover:bg-denim/20 text-denim font-bold transition cursor-pointer">
+                                🪄 AI 自動排布示範
+                            </button>
+                            <button onclick="clearWorkbenchPatches()" class="text-xs px-2.5 py-1 rounded-lg bg-stone-100 hover:bg-red-50 text-mutedInk hover:text-red-600 border border-stone-300 transition cursor-pointer">
+                                清空貼片
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 互動式裁縫墊畫布 -->
+                    <div class="cutting-mat w-full aspect-[4/4.3] max-h-[520px] rounded-2xl border-2 border-moss/30 relative overflow-hidden touch-none">
+                        <svg id="workbench-svg" viewBox="0 0 400 430" class="w-full h-full select-none">
+                            <!-- 點擊空白處取消選取 -->
+                            <rect id="wb-bg-deselect" x="0" y="0" width="400" height="430" fill="transparent" />
+                            
+                            <!-- 圖層 1：服飾主體 (套用材質、花紋、染劑與剪裁版型) -->
+                            <g id="wb-garment-layer"></g>
+
+                            <!-- 圖層 2：破損標記與剪裁輔助線 -->
+                            <g id="wb-guides-layer" pointer-events="none"></g>
+
+                            <!-- 圖層 3：玩家自由拖曳拼貼的布料與配件 -->
+                            <g id="wb-patches-layer"></g>
+
+                            <!-- 圖層 4：選取物件的虛線控制框 -->
+                            <g id="wb-gizmo-layer" pointer-events="none"></g>
+                        </svg>
+
+                        <!-- 畫布底部操作說明 -->
+                        <div class="absolute bottom-2.5 left-3 right-3 flex justify-between items-center pointer-events-none text-[11px] text-moss font-medium bg-white/85 backdrop-blur-xs px-3 py-1 rounded-full border border-moss/20">
+                            <span>👆 直接按住拼布或配件即可在衣服上自由拖曳移動</span>
+                            <span id="wb-patch-count">已放置: 0 件</span>
+                        </div>
+                    </div>
+
+                    <!-- 選取貼片的變形與圖層控制列 -->
+                    <div class="mt-3 bg-paperDark rounded-2xl p-3 border border-stone-300">
+                        <div id="wb-no-selection" class="text-center text-xs text-mutedInk py-1">
+                            💡 點擊右側素材加入畫布，或點選畫布上的貼片來調整<strong>大小、旋轉角度、圖層與刪除</strong>
+                        </div>
+
+                        <div id="wb-active-controls" class="hidden space-y-2.5">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <span id="wb-selected-name" class="text-xs font-bold text-denim bg-white px-2.5 py-1 rounded-lg border border-stone-300">三峽藍染雲紋布</span>
+                                
+                                <!-- 圖層與刪除按鈕 -->
+                                <div class="flex items-center gap-1.5">
+                                    <button onclick="changePatchLayer(1)" class="px-2.5 py-1 rounded-lg bg-white hover:bg-stone-100 border border-stone-300 text-xs font-bold cursor-pointer">↑ 上移圖層</button>
+                                    <button onclick="changePatchLayer(-1)" class="px-2.5 py-1 rounded-lg bg-white hover:bg-stone-100 border border-stone-300 text-xs font-bold cursor-pointer">↓ 下移圖層</button>
+                                    <button onclick="removeSelectedPatch()" class="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold cursor-pointer">🗑️ 刪除貼片</button>
+                                </div>
+                            </div>
+
+                            <!-- 縮放與旋轉按鈕＋滑桿 -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-stone-300/70">
+                                <div class="flex items-center gap-2 text-xs">
+                                    <span class="font-bold text-ink shrink-0">大小</span>
+                                    <button onclick="nudgeTransform('scale', -0.15)" class="w-7 h-7 rounded-lg bg-white border border-stone-300 font-bold hover:bg-stone-100 cursor-pointer">-</button>
+                                    <input id="wb-ctrl-scale" type="range" min="0.45" max="2.2" step="0.05" value="1" oninput="onSliderTransform()" class="flex-1 accent-denim cursor-pointer">
+                                    <button onclick="nudgeTransform('scale', 0.15)" class="w-7 h-7 rounded-lg bg-white border border-stone-300 font-bold hover:bg-stone-100 cursor-pointer">+</button>
+                                </div>
+                                <div class="flex items-center gap-2 text-xs">
+                                    <span class="font-bold text-ink shrink-0">旋轉</span>
+                                    <button onclick="nudgeTransform('rotation', -15)" class="px-2 h-7 rounded-lg bg-white border border-stone-300 font-bold hover:bg-stone-100 cursor-pointer">↺</button>
+                                    <input id="wb-ctrl-rotate" type="range" min="-180" max="180" step="5" value="0" oninput="onSliderTransform()" class="flex-1 accent-denim cursor-pointer">
+                                    <button onclick="nudgeTransform('rotation', 15)" class="px-2 h-7 rounded-lg bg-white border border-stone-300 font-bold hover:bg-stone-100 cursor-pointer">↻</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 完成改造進入環境永續結算 -->
+                <button onclick="finishAndEvaluate()" class="w-full py-4 px-6 rounded-2xl bg-moss hover:bg-emerald-800 text-white font-bold text-base shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2 cursor-pointer">
+                    <span>🌿 完成舊衣改造，生成環境永續結算報告</span>
+                </button>
+            </div>
+
+            <!-- 右欄：AI 精選材料包 / 全工坊材料庫切換面板 (3 cols) -->
+            <div class="lg:col-span-3 bg-white/95 rounded-3xl p-4 shadow-md border border-stone-300 flex flex-col max-h-[700px]">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-serif font-bold text-base text-ink">🧵 拼貼材料庫</h3>
+                    <button id="btn-toggle-pool" onclick="toggleMaterialPoolMode()" class="text-[11px] font-bold px-2.5 py-1 rounded-full bg-ochre/20 hover:bg-ochre/30 text-amber-900 transition cursor-pointer">
+                        瀏覽全工坊材料庫
+                    </button>
+                </div>
+                <p id="pool-mode-desc" class="text-[11px] text-mutedInk mb-3">目前顯示：AI 根據你的提示詞精選的推薦材料包</p>
+
+                <!-- 分類 Tabs (布料拼布 vs 模組化配件) -->
+                <div class="grid grid-cols-2 gap-1.5 bg-paperDark p-1 rounded-xl mb-3 border border-stone-300">
+                    <button id="wb-tab-fabrics" onclick="switchWorkbenchTab('fabrics')" class="py-1.5 px-2 rounded-lg text-xs font-bold bg-denim text-white shadow transition cursor-pointer">
+                        布料拼布
+                    </button>
+                    <button id="wb-tab-accessories" onclick="switchWorkbenchTab('accessories')" class="py-1.5 px-2 rounded-lg text-xs font-bold text-mutedInk hover:text-ink transition cursor-pointer">
+                        模組化配件
+                    </button>
+                </div>
+
+                <!-- 素材網格列表 -->
+                <div id="wb-asset-grid" class="grid grid-cols-2 gap-2.5 overflow-y-auto pr-1 flex-1"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =========================================================================
+         階段 5：環境永續與設計結算報告 (Sustainability & Craft Report)
+         ========================================================================= -->
+    <section id="stage-5" class="hidden flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6">
+        <div class="bg-paper rounded-3xl shadow-2xl border-2 border-stone-300 overflow-hidden">
+            
+            <!-- 頂部結算海報刊頭 -->
+            <div class="bg-moss text-paper px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <span class="text-xs uppercase tracking-widest text-amber-200 font-bold">UPCYCLE IMPACT &amp; CRAFT ARCHIVE</span>
+                    <h2 class="font-serif font-bold text-xl sm:text-2xl">舊衣重生改造 × 環境永續結算報告</h2>
+                </div>
+                <div id="report-grade-badge" class="bg-amber-300 text-ink font-serif font-black px-4 py-1.5 rounded-2xl text-sm sm:text-base shadow">
+                    S 級永續重製設計師
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 p-6 sm:p-8 gap-8">
+                
+                <!-- 左側：可收藏的永續設計成果海報 (5 cols) -->
+                <div class="lg:col-span-5 flex flex-col">
+                    <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-stone-300 relative">
+                        <div class="washi-tape w-24 h-5 absolute -top-2.5 left-1/2 -translate-x-1/2"></div>
+                        
+                        <div class="flex justify-between items-center text-[11px] text-mutedInk border-b border-stone-200 pb-2 mb-3">
+                            <span class="font-serif font-bold text-ink">UPCYCLE STUDIO AI</span>
+                            <span id="poster-theme-tag" class="font-bold text-denim">#台灣在地工藝</span>
+                        </div>
+
+                        <!-- 縮小版 SVG 成品預覽圖 -->
+                        <div id="poster-svg-container" class="cutting-mat w-full aspect-[4/4.2] rounded-2xl border border-stone-300 overflow-hidden flex items-center justify-center"></div>
+
+                        <div class="mt-4 space-y-2">
+                            <h3 id="poster-artwork-title" class="font-serif font-bold text-lg text-ink">三峽藍染重製丹寧褲</h3>
+                            <p id="poster-garment-meta" class="text-xs text-mutedInk">基底：純棉丹寧 · 染製：大菁天然藍染 · 剪裁：零廢棄拼布法</p>
+                            <div class="bg-paper rounded-xl p-3 border border-stone-200">
+                                <div class="text-[10px] font-bold text-mutedInk uppercase mb-0.5">設計師原始提示詞紀錄：</div>
+                                <p id="poster-prompt-record" class="text-xs text-ink italic leading-relaxed"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右側：環境影響正負向深度評估 (7 cols) -->
+                <div class="lg:col-span-7 flex flex-col justify-between space-y-5">
+                    
+                    <!-- 核心永續指標卡 -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div class="bg-white rounded-2xl p-3.5 border border-stone-300 text-center shadow-2xs">
+                            <div class="text-[11px] text-mutedInk">環境永續總分</div>
+                            <div id="stat-eco-score" class="font-serif font-black text-2xl sm:text-3xl text-moss mt-1">88</div>
+                            <div class="text-[10px] text-mutedInk">/ 100 分</div>
+                        </div>
+                        <div class="bg-white rounded-2xl p-3.5 border border-stone-300 text-center shadow-2xs">
+                            <div class="text-[11px] text-mutedInk">延長衣物壽命</div>
+                            <div id="stat-lifespan" class="font-serif font-black text-xl sm:text-2xl text-denim mt-1">+2.8 年</div>
+                            <div class="text-[10px] text-moss">延緩掩埋焚化</div>
+                        </div>
+                        <div class="bg-white rounded-2xl p-3.5 border border-stone-300 text-center shadow-2xs">
+                            <div class="text-[11px] text-mutedInk">預估節省水資源</div>
+                            <div id="stat-water" class="font-serif font-black text-xl sm:text-2xl text-denim mt-1">2,580 L</div>
+                            <div class="text-[10px] text-mutedInk">替代全新棉織品</div>
+                        </div>
+                        <div class="bg-white rounded-2xl p-3.5 border border-stone-300 text-center shadow-2xs">
+                            <div class="text-[11px] text-mutedInk">減少碳排放量</div>
+                            <div id="stat-carbon" class="font-serif font-black text-xl sm:text-2xl text-moss mt-1">6.9 kg</div>
+                            <div class="text-[10px] text-mutedInk">CO₂e 減量效益</div>
+                        </div>
+                    </div>
+
+                    <!-- 正向環境效益 (做對了什麼) -->
+                    <div class="bg-white rounded-2xl p-5 border-2 border-moss/30 space-y-2.5">
+                        <h4 class="font-serif font-bold text-base text-moss flex items-center gap-2">
+                            <span>🌱 正向環境效益（做對了哪些永續決策）</span>
+                        </h4>
+                        <ul id="positive-impact-list" class="space-y-2 text-xs sm:text-sm text-ink"></ul>
+                    </div>
+
+                    <!-- 負向環境代價與警訊 (需要注意的隱憂) -->
+                    <div class="bg-white rounded-2xl p-5 border-2 border-terracotta/30 space-y-2.5">
+                        <h4 class="font-serif font-bold text-base text-terracotta flex items-center gap-2">
+                            <span>⚠️ 負向環境代價與警訊（需要注意的隱憂）</span>
+                        </h4>
+                        <ul id="negative-impact-list" class="space-y-2 text-xs sm:text-sm text-ink"></ul>
+                    </div>
+
+                    <!-- 底部行動按鈕 -->
+                    <div class="flex flex-wrap items-center justify-end gap-3 pt-2">
+                        <button onclick="goToStage(4)" class="px-5 py-3 rounded-2xl bg-white hover:bg-stone-100 text-ink border-2 border-stone-300 font-bold text-sm transition cursor-pointer">
+                            ← 針對環境建議微調作品
+                        </button>
+                        <button onclick="resetAndStartNew()" class="px-6 py-3 rounded-2xl bg-denim hover:bg-denimDark text-white font-bold text-sm shadow-lg transition flex items-center gap-2 cursor-pointer">
+                            <span>🔄 重新挑選舊衣改造</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        /* ============================================================================
+           1. 核心資料庫：服飾、材質、花紋、破損、染劑、剪裁與台灣工藝素材
+           ============================================================================ */
+
+        // 1. 服飾種類
+        const GARMENTS = [
+            { id: 'jeans', name: '寬版丹寧褲', icon: '👖', desc: '經典厚實五袋版型，耐穿好改造', water: 2700, carbon: 7.2 },
+            { id: 'tee', name: 'Oversized 白T恤', icon: '👕', desc: '寬鬆落肩版型，適合短版與拼布重製', water: 1800, carbon: 4.5 },
+            { id: 'shirt', name: '舊格紋襯衫', icon: '👔', desc: '翻領長袖版型，適合解構與工裝改制', water: 2200, carbon: 5.8 },
+            { id: 'tote', name: '帆布托特包', icon: '👜', desc: '大容量包身，完美展現工藝拼布', water: 1400, carbon: 3.4 }
+        ];
+
+        // 2. 布料材質
+        const FABRICS = [
+            { id: 'cotton_denim', name: '純棉丹寧 (100% Cotton Denim)', isSynthetic: false, ecoScore: 10, note: '100% 天然棉纖維，耐用且可自然降解' },
+            { id: 'heavy_cotton', name: '厚磅純棉針織 (Heavyweight Cotton)', isSynthetic: false, ecoScore: 10, note: '單一純棉材質，回收再製相容性極高' },
+            { id: 'flannel_cotton', name: '法蘭絨格紋布 (Flannel Cotton)', isSynthetic: false, ecoScore: 9, note: '柔軟天然棉絨，適合保暖拼布與補丁' },
+            { id: 'raw_canvas', name: '粗帆布 (Raw Canvas)', isSynthetic: false, ecoScore: 10, note: '未經過度化學漂白之天然厚棉布' },
+            { id: 'poly_blend', name: '混紡聚酯纖維 (Poly-Cotton Blend)', isSynthetic: true, ecoScore: -6, note: '⚠️ 含石化合成纖維，剪裁洗滌易釋放微塑膠且較難降解' }
+        ];
+
+        // 3. 布料花紋與底色
+        const PATTERNS = [
+            { id: 'solid_raw', name: '素面原色', baseHex: '#3B5978', overlayUrl: '', swatchBg: '#3B5978' },
+            { id: 'acid_wash', name: '水洗刷舊', baseHex: '#5A7694', overlayUrl: 'url(#overlay-acid-wash)', swatchBg: 'linear-gradient(135deg, #4B6584, #8395A7)' },
+            { id: 'pinstripe', name: '細條紋', baseHex: '#2C3E50', overlayUrl: 'url(#overlay-pinstripe)', swatchBg: 'repeating-linear-gradient(90deg, #2C3E50, #2C3E50 4px, #5D6D7E 4px, #5D6D7E 5px)' },
+            { id: 'classic_check', name: '經典格紋', baseHex: '#8C3B2B', overlayUrl: 'url(#overlay-classic-check)', swatchBg: 'repeating-conic-gradient(#8C3B2B 0% 25%, #2B4C7E 0% 50%) 50% / 14px 14px' },
+            { id: 'tie_dye', name: '扎染雲霧', baseHex: '#4A6FA5', overlayUrl: 'url(#overlay-tie-dye)', swatchBg: 'radial-gradient(circle, #A3CEF1, #274C77)' }
+        ];
+
+        // 4. 破損與舊化狀況 (含畫布上的破損座標，用於判定玩家是否成功覆蓋修補)
+        const DAMAGES = [
+            { id: 'knee_rip', name: '膝蓋/下擺磨損破洞', targetX: 155, targetY: 255, desc: '局部纖維斷裂破洞，急需補丁加固結構' },
+            { id: 'collar_fade', name: '領口/袖口泛黃褪色', targetX: 200, targetY: 115, desc: '領圍或上緣明顯日曬泛黃，適合植物染翻新' },
+            { id: 'coffee_stain', name: '局部咖啡漬污損', targetX: 235, targetY: 195, desc: '前片有洗不掉的深色污漬，可用創意拼貼遮瑕' },
+            { id: 'oversized_intact', name: '版型過大過時但布料完整', targetX: 200, targetY: 220, desc: '無明顯破損，適合透過剪裁重塑與織帶點綴煥新' }
+        ];
+
+        // 5. AI 可推薦的天然染劑與工藝
+        const DYES = [
+            { id: 'none', name: '保留原始底色 (不額外染色)', hex: null, isNatural: true, ecoBonus: 6, desc: '零水資源與零染劑消耗，最低碳的翻新方式' },
+            { id: 'sanxia_indigo', name: '大菁天然藍染浸染 (Sanxia Indigo)', hex: '#1B436B', isNatural: true, ecoBonus: 4, desc: '採用台灣三峽傳統植物藍靛染製，天然抗菌且無重金屬廢水' },
+            { id: 'taiwan_yam', name: '台灣薯榔大地褐染 (Yam Earth Dye)', hex: '#7A4928', isNatural: true, ecoBonus: 4, desc: '萃取自台灣山林薯榔塊莖的溫潤紅褐色天然植物染' },
+            { id: 'tea_ochre', name: '南投凍頂茶渣暖金染 (Oolong Tea Dye)', hex: '#9C7A3C', isNatural: true, ecoBonus: 5, desc: '回收製茶廠廢棄茶渣萃取，賦予織物溫雅的復古米金色' },
+            { id: 'cyber_charcoal', name: '賽博碳黑酸洗做舊 (Carbon Acid Wash)', hex: '#2B2D30', isNatural: false, ecoBonus: -4, desc: '⚠️ 強烈的深炭黑刷舊視覺，但化學洗水過程耗水量較高' }
+        ];
+
+        // 6. 剪裁版型模式
+        const CUTS = [
+            {
+                id: 'zero_waste_patch',
+                name: '零廢棄拼布補丁法 (Zero-Waste)',
+                wastePct: 3,
+                ecoDelta: 14,
+                badge: '邊角料 3% · 極低碳',
+                desc: '完整保留原衣輪廓，僅修整毛邊並以拼布加固，幾乎不產生裁剪廢料。'
+            },
+            {
+                id: 'asym_hem',
+                name: '不對稱下擺解構剪裁 (Asymmetric)',
+                wastePct: 11,
+                ecoDelta: 4,
+                badge: '邊角料 11% · 適中',
+                desc: '將下擺剪出斜向層次感，兼具設計張力與適度的布料利用率。'
+            },
+            {
+                id: 'cropped_cut',
+                name: '俐落短版剪裁 (Cropped Cut)',
+                wastePct: 19,
+                ecoDelta: -8,
+                badge: '邊角料 19% · 需注意碎布',
+                desc: '大幅裁短衣長或褲長打造俐落比例，但會產生約 19% 裁剪碎布，建議將碎布拼貼回衣物上！'
+            }
+        ];
+
+        // 7. 台灣在地工藝拼布與模組化配件庫
+        const MATERIALS = {
+            fabrics: [
+                {
+                    id: 'fab_indigo',
+                    name: '三峽藍染雲紋布',
+                    type: 'fabrics',
+                    isEco: true,
+                    ecoDelta: +5,
+                    tag: '天然植物藍染',
+                    renderSVG: () => `
+                        <rect x="-42" y="-32" width="84" height="64" rx="6" fill="url(#pat-indigo-dye)" stroke="#F7F4EC" stroke-width="2" stroke-dasharray="4,2"/>
+                        <rect x="-36" y="-26" width="72" height="52" rx="4" fill="none" stroke="#8EB8E5" stroke-width="0.9" opacity="0.7"/>
+                    `
+                },
+                {
+                    id: 'fab_hakka',
+                    name: '客家桐花牡丹拼布',
+                    type: 'fabrics',
+                    isEco: true,
+                    ecoDelta: +5,
+                    tag: '庫存純棉古布',
+                    renderSVG: () => `
+                        <path d="M-38,-34 L38,-34 L38,16 L0,36 L-38,16 Z" fill="url(#pat-hakka-floral)" stroke="#F7F4EC" stroke-width="2" stroke-dasharray="4,2"/>
+                    `
+                },
+                {
+                    id: 'fab_indigenous',
+                    name: '原民幾何圖騰織帶',
+                    type: 'fabrics',
+                    isEco: true,
+                    ecoDelta: +5,
+                    tag: '台灣原民工藝',
+                    renderSVG: () => `
+                        <rect x="-65" y="-14" width="130" height="28" rx="2" fill="url(#pat-indigenous-weave)" stroke="#C8963E" stroke-width="1.5"/>
+                        <line x1="-60" y1="-10" x2="60" y2="-10" stroke="#F7F4EC" stroke-width="0.8" stroke-dasharray="3,2"/>
+                        <line x1="-60" y1="10" x2="60" y2="10" stroke="#F7F4EC" stroke-width="0.8" stroke-dasharray="3,2"/>
+                    `
+                },
+                {
+                    id: 'fab_recycled_denim',
+                    name: '回收丹寧格紋布',
+                    type: 'fabrics',
+                    isEco: true,
+                    ecoDelta: +6,
+                    tag: '100% 廢丹寧再生',
+                    renderSVG: () => `
+                        <rect x="-36" y="-36" width="72" height="72" rx="5" fill="url(#pat-recycled-denim)" stroke="#1D3557" stroke-width="1.5"/>
+                        <rect x="-31" y="-31" width="62" height="62" rx="3" fill="none" stroke="#F7F4EC" stroke-width="1.5" stroke-dasharray="4,3"/>
+                    `
+                },
+                {
+                    id: 'fab_yam_cloth',
+                    name: '台灣薯榔大地褐布',
+                    type: 'fabrics',
+                    isEco: true,
+                    ecoDelta: +5,
+                    tag: '天然薯榔染棉布',
+                    renderSVG: () => `
+                        <circle cx="0" cy="0" r="38" fill="url(#pat-yam-dye)" stroke="#F7F4EC" stroke-width="2" stroke-dasharray="4,2"/>
+                    `
+                }
+            ],
+            accessories: [
+                {
+                    id: 'acc_embroidery',
+                    name: '手工十字刺繡花',
+                    type: 'accessories',
+                    isEco: true,
+                    ecoDelta: +4,
+                    tag: '純棉線手工刺繡',
+                    renderSVG: () => `
+                        <g stroke="#C8963E" stroke-width="3" stroke-linecap="round">
+                            <line x1="-18" y1="-18" x2="18" y2="18"/>
+                            <line x1="18" y1="-18" x2="-18" y2="18"/>
+                            <line x1="0" y1="-24" x2="0" y2="24" stroke="#F4D35E"/>
+                            <line x1="-24" y1="0" x2="24" y2="0" stroke="#F4D35E"/>
+                        </g>
+                        <circle cx="0" cy="0" r="7" fill="#D96B43" stroke="#F7F4EC" stroke-width="1.5"/>
+                    `
+                },
+                {
+                    id: 'acc_brass_buttons',
+                    name: '復古黃銅鈕扣組',
+                    type: 'accessories',
+                    isEco: true,
+                    ecoDelta: +2,
+                    tag: '易拆卸可重複用',
+                    renderSVG: () => `
+                        <g transform="translate(0, -24)">
+                            <circle cx="0" cy="0" r="9" fill="#C8963E" stroke="#5C3D12" stroke-width="1.5"/>
+                            <circle cx="-2.5" cy="-2.5" r="1.2" fill="#5C3D12"/><circle cx="2.5" cy="-2.5" r="1.2" fill="#5C3D12"/>
+                            <circle cx="-2.5" cy="2.5" r="1.2" fill="#5C3D12"/><circle cx="2.5" cy="2.5" r="1.2" fill="#5C3D12"/>
+                        </g>
+                        <g transform="translate(0, 0)">
+                            <circle cx="0" cy="0" r="9" fill="#C8963E" stroke="#5C3D12" stroke-width="1.5"/>
+                            <circle cx="-2.5" cy="-2.5" r="1.2" fill="#5C3D12"/><circle cx="2.5" cy="-2.5" r="1.2" fill="#5C3D12"/>
+                            <circle cx="-2.5" cy="2.5" r="1.2" fill="#5C3D12"/><circle cx="2.5" cy="2.5" r="1.2" fill="#5C3D12"/>
+                        </g>
+                        <g transform="translate(0, 24)">
+                            <circle cx="0" cy="0" r="9" fill="#C8963E" stroke="#5C3D12" stroke-width="1.5"/>
+                            <circle cx="-2.5" cy="-2.5" r="1.2" fill="#5C3D12"/><circle cx="2.5" cy="-2.5" r="1.2" fill="#5C3D12"/>
+                            <circle cx="-2.5" cy="2.5" r="1.2" fill="#5C3D12"/><circle cx="2.5" cy="2.5" r="1.2" fill="#5C3D12"/>
+                        </g>
+                    `
+                },
+                {
+                    id: 'acc_cargo_pocket',
+                    name: '可拆式工裝立體口袋',
+                    type: 'accessories',
+                    isEco: true,
+                    ecoDelta: +3,
+                    tag: '模組化機能設計',
+                    renderSVG: () => `
+                        <rect x="-28" y="-32" width="56" height="64" rx="4" fill="#4A5D4E" stroke="#24221F" stroke-width="2"/>
+                        <rect x="-28" y="-32" width="56" height="18" rx="2" fill="#36473A" stroke="#24221F" stroke-width="1.5"/>
+                        <circle cx="0" cy="-21" r="3.5" fill="#C8963E"/>
+                        <line x1="-22" y1="24" x2="22" y2="24" stroke="#F7F4EC" stroke-width="1" stroke-dasharray="3,2"/>
+                    `
+                },
+                {
+                    id: 'acc_safety_pin',
+                    name: '龐克銀色安全別針',
+                    type: 'accessories',
+                    isEco: true,
+                    ecoDelta: +1,
+                    tag: '免縫無損固定件',
+                    renderSVG: () => `
+                        <g transform="rotate(-25)" fill="none">
+                            <rect x="-26" y="-7" width="52" height="14" rx="7" stroke="#475569" stroke-width="4"/>
+                            <rect x="-26" y="-7" width="52" height="14" rx="7" stroke="#E2E8F0" stroke-width="2"/>
+                            <circle cx="-22" cy="0" r="4" fill="#94A3B8" stroke="#334155" stroke-width="1.5"/>
+                            <rect x="16" y="-6" width="12" height="12" rx="3" fill="#94A3B8" stroke="#334155" stroke-width="1.5"/>
+                        </g>
+                    `
+                },
+                {
+                    id: 'acc_butterfly',
+                    name: 'Y2K 金屬蝴蝶燙布貼',
+                    type: 'accessories',
+                    isEco: false,
+                    ecoDelta: -4,
+                    tag: '合成亮面熱熔膠貼',
+                    renderSVG: () => `
+                        <g stroke="#2B4C7E" stroke-width="1.5">
+                            <path d="M0,0 C-12,-28 -42,-22 -34,0 C-40,18 -14,26 0,6 Z" fill="#A5D8FF"/>
+                            <path d="M0,0 C12,-28 42,-22 34,0 C40,18 14,26 0,6 Z" fill="#A5D8FF"/>
+                            <path d="M0,2 C-10,-16 -26,-12 -22,0 C-25,10 -10,14 0,4 Z" fill="#FFDEEB"/>
+                            <path d="M0,2 C10,-16 26,-12 22,0 C25,10 10,14 0,4 Z" fill="#FFDEEB"/>
+                            <ellipse cx="0" cy="2" rx="2.5" ry="14" fill="#1D3557"/>
+                        </g>
+                    `
+                },
+                {
+                    id: 'acc_buckle_strap',
+                    name: '工裝織帶塑膠插扣',
+                    type: 'accessories',
+                    isEco: false,
+                    ecoDelta: -3,
+                    tag: '複合塑膠扣具',
+                    renderSVG: () => `
+                        <rect x="-55" y="-9" width="110" height="18" fill="#2B302C" stroke="#1A1E18" stroke-width="1"/>
+                        <rect x="-16" y="-13" width="32" height="26" rx="3" fill="#4A5246" stroke="#1A1E18" stroke-width="1.5"/>
+                        <rect x="-8" y="-8" width="16" height="16" rx="1" fill="#C8963E"/>
+                    `
+                }
+            ]
+        };
+
+        /* ============================================================================
+           2. 遊戲全局狀態 (Player-Driven State)
+           ============================================================================ */
+        let state = {
+            currentStage: 0,
+            // 階段一：玩家設定的舊衣細節
+            garment: 'jeans',
+            fabric: 'cotton_denim',
+            pattern: 'acid_wash',
+            damage: 'knee_rip',
+
+            // 階段二：玩家下達給 AI 的主題詞與提示詞
+            themeTag: '#台灣在地工藝',
+            designPrompt: '希望把破洞修補好，加入三峽藍染的層次感，版型俐落一點，並帶有一點手工刺繡與古布拼貼的溫度。',
+
+            // 階段三：AI 根據玩家輸入生成的推薦藍圖
+            aiRecommendation: {
+                cutId: 'zero_waste_patch',
+                cutReason: '',
+                dyeId: 'sanxia_indigo',
+                dyeReason: '',
+                recommendedDyeIds: ['none', 'sanxia_indigo', 'taiwan_yam'],
+                recommendedFabricIds: ['fab_indigo', 'fab_hakka', 'fab_recycled_denim'],
+                recommendedAccessoryIds: ['acc_embroidery', 'acc_brass_buttons', 'acc_cargo_pocket']
+            },
+
+            // 階段四：工作台即時狀態
+            appliedDye: 'none',
+            appliedCut: 'zero_waste_patch',
+            poolMode: 'ai', // 'ai' | 'all'
+            wbTab: 'fabrics', // 'fabrics' | 'accessories'
+            patches: [], // { uid, assetId, x, y, scale, rotation }
+            selectedPatchUid: null,
+            isDragging: false,
+            dragOffset: { x: 0, y: 0 }
+        };
+
+        /* ============================================================================
+           3. 初始化與階段導覽控制
+           ============================================================================ */
+        window.onload = function () {
+            renderStage1UI();
+            setupWorkbenchInteractions();
+        };
+
+        function showToast(msg, icon = '✦') {
+            const box = document.getElementById('toast-box');
+            document.getElementById('toast-msg').textContent = msg;
+            document.getElementById('toast-icon').textContent = icon;
+            box.classList.remove('translate-y-24', 'opacity-0');
+            clearTimeout(window.toastTimer);
+            window.toastTimer = setTimeout(() => {
+                box.classList.add('translate-y-24', 'opacity-0');
+            }, 3000);
+        }
+
+        function goToStage(stageNum) {
+            state.currentStage = stageNum;
+            for (let i = 0; i <= 5; i++) {
+                const el = document.getElementById(`stage-${i}`);
+                if (el) el.classList.add('hidden');
+            }
+
+            const header = document.getElementById('app-header');
+            if (stageNum === 0) {
+                header.classList.add('hidden');
+            } else {
+                header.classList.remove('hidden');
+            }
+
+            document.getElementById(`stage-${stageNum}`).classList.remove('hidden');
+            updateTopNav(stageNum);
+
+            // 進入各階段時的同步更新
+            if (stageNum === 1) renderStage1UI();
+            if (stageNum === 2) syncStage2Summary();
+            if (stageNum === 4) {
+                renderWorkbenchSidebars();
+                renderWorkbenchGarment();
+                renderWorkbenchPatches();
+            }
+            if (stageNum === 5) generateSustainabilityReport();
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function updateTopNav(activeStage) {
+            for (let i = 1; i <= 5; i++) {
+                const btn = document.getElementById(`nav-stage-${i}`);
+                if (!btn) continue;
+                if (i === activeStage) {
+                    btn.className = 'px-3 py-1 rounded-full text-xs font-bold bg-denim text-white shadow transition whitespace-nowrap cursor-pointer';
+                } else if (i < activeStage) {
+                    btn.className = 'px-3 py-1 rounded-full text-xs font-bold bg-moss/15 text-moss hover:bg-moss/25 transition whitespace-nowrap cursor-pointer';
+                } else {
+                    btn.className = 'px-3 py-1 rounded-full text-xs font-medium bg-stone-200 text-mutedInk transition whitespace-nowrap cursor-pointer';
+                }
+            }
+        }
+
+        /* ============================================================================
+           4. 階段一：舊衣細節設定與即時向量預覽
+           ============================================================================ */
+        function renderStage1UI() {
+            // 1. 服飾種類
+            document.getElementById('opt-garments').innerHTML = GARMENTS.map(g => {
+                const active = state.garment === g.id;
+                return `
+                <button onclick="setStage1Prop('garment', '${g.id}')" class="p-3 rounded-2xl border-2 text-left transition cursor-pointer ${active ? 'border-denim bg-denim/10 shadow-xs' : 'border-stone-200 bg-paper/60 hover:border-stone-400'}">
+                    <div class="text-2xl mb-1">${g.icon}</div>
+                    <div class="font-bold text-xs text-ink">${g.name}</div>
+                    <div class="text-[10px] text-mutedInk mt-0.5 leading-tight">${g.desc}</div>
+                </button>`;
+            }).join('');
+
+            // 2. 布料材質
+            document.getElementById('opt-fabrics').innerHTML = FABRICS.map(f => {
+                const active = state.fabric === f.id;
+                return `
+                <button onclick="setStage1Prop('fabric', '${f.id}')" class="p-3 rounded-2xl border-2 text-left transition cursor-pointer ${active ? 'border-moss bg-moss/10 shadow-xs' : 'border-stone-200 bg-paper/60 hover:border-stone-400'}">
+                    <div class="font-bold text-xs text-ink">${f.name}</div>
+                    <div class="text-[11px] ${f.isSynthetic ? 'text-terracotta' : 'text-moss'} mt-0.5">${f.note}</div>
+                </button>`;
+            }).join('');
+
+            // 3. 花紋與底色
+            document.getElementById('opt-patterns').innerHTML = PATTERNS.map(p => {
+                const active = state.pattern === p.id;
+                return `
+                <button onclick="setStage1Prop('pattern', '${p.id}')" class="p-2 rounded-2xl border-2 flex flex-col items-center text-center transition cursor-pointer ${active ? 'border-denim bg-denim/10 shadow-xs' : 'border-stone-200 bg-paper/60 hover:border-stone-400'}">
+                    <span class="w-8 h-8 rounded-full border border-stone-400 mb-1 shadow-inner" style="background: ${p.swatchBg}"></span>
+                    <span class="font-bold text-[11px] text-ink">${p.name}</span>
+                </button>`;
+            }).join('');
+
+            // 4. 破損與舊化狀況
+            document.getElementById('opt-damages').innerHTML = DAMAGES.map(d => {
+                const active = state.damage === d.id;
+                return `
+                <button onclick="setStage1Prop('damage', '${d.id}')" class="p-3 rounded-2xl border-2 text-left transition cursor-pointer ${active ? 'border-terracotta bg-terracotta/10 shadow-xs' : 'border-stone-200 bg-paper/60 hover:border-stone-400'}">
+                    <div class="font-bold text-xs text-ink">${d.name}</div>
+                    <div class="text-[11px] text-mutedInk mt-0.5">${d.desc}</div>
+                </button>`;
+            }).join('');
+
+            updateStage1Preview();
+        }
+
+        function setStage1Prop(key, val) {
+            state[key] = val;
+            renderStage1UI();
+        }
+
+        function updateStage1Preview() {
+            const gObj = GARMENTS.find(x => x.id === state.garment);
+            const fObj = FABRICS.find(x => x.id === state.fabric);
+            const dObj = DAMAGES.find(x => x.id === state.damage);
+
+            document.getElementById('preview-summary-left').textContent = `${gObj.name} · ${fObj.name.split(' ')[0]}`;
+            document.getElementById('preview-summary-right').textContent = dObj.name;
+
+            const ecoBadge = document.getElementById('preview-eco-badge');
+            if (fObj.isSynthetic) {
+                ecoBadge.textContent = '⚠️ 含合成聚酯纖維';
+                ecoBadge.className = 'text-xs font-bold px-2.5 py-1 rounded-full bg-terracotta/15 text-terracotta';
+            } else {
+                ecoBadge.textContent = '🌱 100% 天然植物纖維';
+                ecoBadge.className = 'text-xs font-bold px-2.5 py-1 rounded-full bg-moss/15 text-moss';
+            }
+
+            // 繪製階段一預覽 SVG
+            drawGarmentSVG(
+                document.getElementById('stage1-garment-layer'),
+                document.getElementById('stage1-damage-layer'),
+                {
+                    garmentId: state.garment,
+                    patternId: state.pattern,
+                    dyeId: 'none',
+                    cutId: 'zero_waste_patch',
+                    damageId: state.damage,
+                    isRepaired: false
+                }
+            );
+        }
+
+        /* ============================================================================
+           5. 階段二 & 階段三：玩家下達提示詞 & AI 動態分析引擎
+           ============================================================================ */
+        function syncStage2Summary() {
+            const gObj = GARMENTS.find(x => x.id === state.garment);
+            const fObj = FABRICS.find(x => x.id === state.fabric);
+            const pObj = PATTERNS.find(x => x.id === state.pattern);
+            const dObj = DAMAGES.find(x => x.id === state.damage);
+            document.getElementById('stage2-garment-summary').textContent = `${gObj.name} · ${fObj.name.split(' ')[0]} · ${pObj.name} · ${dObj.name}`;
+        }
+
+        function setThemeTag(tag) {
+            document.getElementById('input-theme-tag').value = tag;
+            state.themeTag = tag;
+        }
+
+        function appendPromptSnippet(snippet) {
+            const box = document.getElementById('input-design-prompt');
+            const cur = box.value.trim();
+            box.value = cur ? `${cur}，${snippet}` : snippet;
+        }
+
+        // AI 關鍵字語意分析與動態推薦引擎
+        function submitPromptToAI() {
+            const rawTheme = document.getElementById('input-theme-tag').value.trim() || '#永續創意重製';
+            const rawPrompt = document.getElementById('input-design-prompt').value.trim() || '希望修補破損並結合台灣特色工藝拼布';
+
+            state.themeTag = rawTheme;
+            state.designPrompt = rawPrompt;
+
+            // 顯示 AI 解析動畫
+            const modal = document.getElementById('ai-thinking-modal');
+            const stepText = document.getElementById('ai-thinking-step');
+            const bar = document.getElementById('ai-thinking-bar');
+            modal.classList.remove('hidden');
+            bar.style.width = '20%';
+
+            const steps = [
+                { pct: '45%', msg: `解析主題詞「${rawTheme}」與舊衣纖維相容性...` },
+                { pct: '78%', msg: '計算低廢棄剪裁藍圖並匹配台灣在地天然染劑...' },
+                { pct: '100%', msg: '正在打包專屬拼布與模組化配件材料包！' }
+            ];
+
+            let idx = 0;
+            const timer = setInterval(() => {
+                if (idx < steps.length) {
+                    bar.style.width = steps[idx].pct;
+                    stepText.textContent = steps[idx].msg;
+                    idx++;
+                } else {
+                    clearInterval(timer);
+                    modal.classList.add('hidden');
+                    computeAIBlueprint(rawTheme, rawPrompt);
+                    goToStage(3);
+                }
+            }, 420);
+        }
+
+        function computeAIBlueprint(theme, prompt) {
+            const combined = (theme + ' ' + prompt).toLowerCase();
+            const gObj = GARMENTS.find(x => x.id === state.garment);
+            const dObj = DAMAGES.find(x => x.id === state.damage);
+
+            // 1. 決定推薦剪裁
+            let recCutId = 'zero_waste_patch';
+            let cutReason = `針對「${dObj.name}」，AI 建議優先保留 ${gObj.name} 的完整版型結構，以拼布覆蓋加固，將邊角料廢棄降至最低（僅 3%）。`;
+
+            if (combined.includes('短版') || combined.includes('crop') || combined.includes('辣妹') || combined.includes('y2k')) {
+                recCutId = 'cropped_cut';
+                cutReason = `偵測到你期望「俐落短版 / Y2K」輪廓，AI 規劃了短版剪裁線！小提醒：裁下的下擺布料建議直接作為拼布貼片使用以減少浪費。`;
+            } else if (combined.includes('不對稱') || combined.includes('解構') || combined.includes('龐克') || combined.includes('廢土')) {
+                recCutId = 'asym_hem';
+                cutReason = `針對「解構 / 不對稱」關鍵字，AI 設計了斜向層次下擺剪裁，在維持高布料利用率的同時創造前衛視覺。`;
+            }
+
+            // 2. 決定推薦染劑
+            let recDyeId = 'sanxia_indigo';
+            let dyeReason = '天然植物藍靛染劑能完美遮蓋舊化泛黃與污漬，賦予織物沉穩的台灣工藝層次感。';
+            let recDyeList = ['none', 'sanxia_indigo', 'taiwan_yam', 'tea_ochre'];
+
+            if (combined.includes('山系') || combined.includes('大地') || combined.includes('工裝') || combined.includes('薯榔')) {
+                recDyeId = 'taiwan_yam';
+                dyeReason = '針對山系戶外主題，AI 推薦台灣原生「薯榔大地褐染」，耐髒且散發自然山林氣息。';
+            } else if (combined.includes('文青') || combined.includes('茶') || combined.includes('日系') || combined.includes('無印')) {
+                recDyeId = 'tea_ochre';
+                dyeReason = '運用南投製茶廠回收茶渣萃取的暖金茶染，柔和溫潤且實現農業副產物循環。';
+            } else if (combined.includes('龐克') || combined.includes('賽博') || combined.includes('黑') || combined.includes('y2k')) {
+                recDyeId = 'cyber_charcoal';
+                dyeReason = '為呼應前衛街頭與暗黑龐克風格，提供深炭黑做舊洗色選項（環保提示：若選用「保留原色」可更省水喔！）。';
+                recDyeList = ['none', 'cyber_charcoal', 'sanxia_indigo'];
+            }
+
+            // 3. 決定推薦拼布與配件包
+            let recFabrics = ['fab_indigo', 'fab_hakka', 'fab_recycled_denim'];
+            let recAccs = ['acc_embroidery', 'acc_brass_buttons', 'acc_cargo_pocket'];
+
+            if (combined.includes('y2k') || combined.includes('辣妹') || combined.includes('蝴蝶') || combined.includes('龐克')) {
+                recFabrics = ['fab_recycled_denim', 'fab_indigo', 'fab_hakka'];
+                recAccs = ['acc_butterfly', 'acc_safety_pin', 'acc_brass_buttons'];
+            } else if (combined.includes('山系') || combined.includes('工裝') || combined.includes('原民') || combined.includes('口袋')) {
+                recFabrics = ['fab_indigenous', 'fab_yam_cloth', 'fab_recycled_denim'];
+                recAccs = ['acc_cargo_pocket', 'acc_buckle_strap', 'acc_brass_buttons'];
+            } else if (combined.includes('客家') || combined.includes('花布')) {
+                recFabrics = ['fab_hakka', 'fab_indigo', 'fab_yam_cloth'];
+                recAccs = ['acc_embroidery', 'acc_brass_buttons', 'acc_safety_pin'];
+            }
+
+            state.aiRecommendation = {
+                cutId: recCutId,
+                cutReason,
+                dyeId: recDyeId,
+                dyeReason,
+                recommendedDyeIds: recDyeList,
+                recommendedFabricIds: recFabrics,
+                recommendedAccessoryIds: recAccs
+            };
+
+            // 同步預設套用 AI 推薦的剪裁與染劑
+            state.appliedCut = recCutId;
+            state.appliedDye = recDyeId;
+            state.poolMode = 'ai';
+
+            renderStage3Blueprint();
+        }
+
+        function renderStage3Blueprint() {
+            const rec = state.aiRecommendation;
+            const cutObj = CUTS.find(c => c.id === rec.cutId);
+            const dyeObj = DYES.find(d => d.id === rec.dyeId);
+
+            document.getElementById('blueprint-theme-badge').textContent = state.themeTag;
+            document.getElementById('blueprint-prompt-quote').textContent = `「你的提示詞：${state.designPrompt}」`;
+
+            // 1. 剪裁卡片
+            document.getElementById('bp-cut-title').textContent = cutObj.name;
+            document.getElementById('bp-cut-waste-badge').textContent = cutObj.badge;
+            document.getElementById('bp-cut-desc').textContent = rec.cutReason;
+
+            // 2. 染劑卡片與色票
+            document.getElementById('bp-dye-title').textContent = dyeObj.name;
+            document.getElementById('bp-dye-desc').textContent = rec.dyeReason;
+
+            document.getElementById('bp-dye-swatches').innerHTML = rec.recommendedDyeIds.map(did => {
+                const d = DYES.find(x => x.id === did);
+                const selected = state.appliedDye === did;
+                return `
+                <button onclick="selectBlueprintDye('${did}')" class="px-3 py-1.5 rounded-xl border-2 text-xs font-bold flex items-center gap-2 transition cursor-pointer ${selected ? 'border-denim bg-denim/10 text-denim' : 'border-stone-300 bg-white text-ink hover:border-stone-400'}">
+                    <span class="w-4 h-4 rounded-full border border-stone-400" style="background-color: ${d.hex || '#CBD5E1'}"></span>
+                    <span>${d.name.split(' ')[0]}</span>
+                </button>`;
+            }).join('');
+
+            // 3. 推薦材料包列表
+            document.getElementById('bp-fabrics-list').innerHTML = rec.recommendedFabricIds.map(fid => {
+                const m = findMaterialById(fid);
+                return `
+                <div class="p-2.5 rounded-xl bg-paper border border-stone-200 flex items-center gap-2.5">
+                    <svg viewBox="-70 -45 140 90" class="w-11 h-9 shrink-0 overflow-visible">${m.renderSVG()}</svg>
+                    <div>
+                        <div class="font-bold text-xs text-ink leading-tight">${m.name}</div>
+                        <span class="text-[10px] text-moss font-medium">${m.tag}</span>
+                    </div>
+                </div>`;
+            }).join('');
+
+            document.getElementById('bp-accessories-list').innerHTML = rec.recommendedAccessoryIds.map(aid => {
+                const m = findMaterialById(aid);
+                return `
+                <div class="p-2.5 rounded-xl bg-paper border border-stone-200 flex items-center gap-2.5">
+                    <svg viewBox="-70 -45 140 90" class="w-11 h-9 shrink-0 overflow-visible">${m.renderSVG()}</svg>
+                    <div>
+                        <div class="font-bold text-xs text-ink leading-tight">${m.name}</div>
+                        <span class="text-[10px] ${m.isEco ? 'text-moss' : 'text-terracotta'} font-medium">${m.tag}</span>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function selectBlueprintDye(dyeId) {
+            state.appliedDye = dyeId;
+            renderStage3Blueprint();
+            showToast(`已選擇染劑：${DYES.find(d => d.id === dyeId).name.split(' ')[0]}`, '🎨');
+        }
+
+        function enterWorkbench() {
+            goToStage(4);
+            // 若玩家第一次進入工作台且尚未放置任何貼片，自動放上一塊推薦拼布在破損處附近作為起手式（玩家可自由拖曳或刪除）
+            if (state.patches.length === 0) {
+                const dmg = DAMAGES.find(d => d.id === state.damage);
+                const firstFab = state.aiRecommendation.recommendedFabricIds[0] || 'fab_indigo';
+                state.patches.push({
+                    uid: 'p_' + Date.now(),
+                    assetId: firstFab,
+                    x: dmg.targetX,
+                    y: dmg.targetY,
+                    scale: 1,
+                    rotation: -6
+                });
+                state.selectedPatchUid = state.patches[0].uid;
+                renderWorkbenchPatches();
+            }
+            showToast('歡迎來到改造工作台！點擊右側素材可新增，按住畫布物件可自由拖曳。', '✂️');
+        }
+
+        /* ============================================================================
+           6. 階段四：SVG 互動改造工作台（染製、剪裁、自由拖曳/縮放/旋轉拼貼）
+           ============================================================================ */
+        function findMaterialById(id) {
+            return [...MATERIALS.fabrics, ...MATERIALS.accessories].find(m => m.id === id);
+        }
+
+        function renderWorkbenchSidebars() {
+            // 備忘錄
+            document.getElementById('wb-theme-memo').textContent = state.themeTag;
+            document.getElementById('wb-prompt-memo').textContent = state.designPrompt;
+
+            // 1. 染劑列表
+            document.getElementById('wb-dye-list').innerHTML = DYES.map(d => {
+                const active = state.appliedDye === d.id;
+                return `
+                <button onclick="applyWorkbenchDye('${d.id}')" class="w-full p-2 rounded-xl border text-left flex items-center gap-2 transition cursor-pointer ${active ? 'border-denim bg-denim/10 font-bold' : 'border-stone-200 bg-paper/60 hover:border-stone-400'}">
+                    <span class="w-4 h-4 rounded-full border border-stone-400 shrink-0" style="background-color: ${d.hex || '#CBD5E1'}"></span>
+                    <span class="text-xs text-ink truncate">${d.name.split(' ')[0]}</span>
+                </button>`;
+            }).join('');
+
+            // 2. 剪裁版型列表
+            document.getElementById('wb-cut-list').innerHTML = CUTS.map(c => {
+                const active = state.appliedCut === c.id;
+                return `
+                <button onclick="applyWorkbenchCut('${c.id}')" class="w-full p-2.5 rounded-xl border-2 text-left transition cursor-pointer ${active ? 'border-denim bg-denim/10' : 'border-stone-200 bg-paper/60 hover:border-stone-400'}">
+                    <div class="font-bold text-xs text-ink">${c.name.split(' ')[0]}</div>
+                    <div class="text-[10px] ${c.wastePct > 15 ? 'text-terracotta' : 'text-moss'} font-bold mt-0.5">${c.badge}</div>
+                </button>`;
+            }).join('');
+
+            // 3. 右側材料庫渲染
+            renderWorkbenchAssetGrid();
+        }
+
+        function applyWorkbenchDye(dyeId) {
+            state.appliedDye = dyeId;
+            renderWorkbenchSidebars();
+            renderWorkbenchGarment();
+        }
+
+        function applyWorkbenchCut(cutId) {
+            state.appliedCut = cutId;
+            renderWorkbenchSidebars();
+            renderWorkbenchGarment();
+        }
+
+        function toggleMaterialPoolMode() {
+            state.poolMode = state.poolMode === 'ai' ? 'all' : 'ai';
+            const btn = document.getElementById('btn-toggle-pool');
+            const desc = document.getElementById('pool-mode-desc');
+            if (state.poolMode === 'ai') {
+                btn.textContent = '瀏覽全工坊材料庫';
+                desc.textContent = '目前顯示：AI 根據你的提示詞精選的推薦材料包';
+            } else {
+                btn.textContent = '切回 AI 精選材料包';
+                desc.textContent = '目前顯示：工坊完整材料庫（共 11 種布料與配件）';
+            }
+            renderWorkbenchAssetGrid();
+        }
+
+        function switchWorkbenchTab(tab) {
+            state.wbTab = tab;
+            const btnF = document.getElementById('wb-tab-fabrics');
+            const btnA = document.getElementById('wb-tab-accessories');
+            if (tab === 'fabrics') {
+                btnF.className = 'py-1.5 px-2 rounded-lg text-xs font-bold bg-denim text-white shadow transition cursor-pointer';
+                btnA.className = 'py-1.5 px-2 rounded-lg text-xs font-bold text-mutedInk hover:text-ink transition cursor-pointer';
+            } else {
+                btnA.className = 'py-1.5 px-2 rounded-lg text-xs font-bold bg-denim text-white shadow transition cursor-pointer';
+                btnF.className = 'py-1.5 px-2 rounded-lg text-xs font-bold text-mutedInk hover:text-ink transition cursor-pointer';
+            }
+            renderWorkbenchAssetGrid();
+        }
+
+        function renderWorkbenchAssetGrid() {
+            let list = MATERIALS[state.wbTab] || [];
+            if (state.poolMode === 'ai') {
+                const allowedIds = state.wbTab === 'fabrics' 
+                    ? state.aiRecommendation.recommendedFabricIds 
+                    : state.aiRecommendation.recommendedAccessoryIds;
+                list = list.filter(item => allowedIds.includes(item.id));
+            }
+
+            document.getElementById('wb-asset-grid').innerHTML = list.map(item => `
+                <button onclick="addPatchToWorkbench('${item.id}')" class="p-2.5 rounded-2xl bg-paper hover:bg-denim/10 border border-stone-300 hover:border-denim transition flex flex-col items-center text-center group cursor-pointer">
+                    <div class="w-16 h-13 flex items-center justify-center mb-1">
+                        <svg viewBox="-70 -45 140 90" class="w-full h-full overflow-visible group-hover:scale-105 transition-transform">
+                            ${item.renderSVG()}
+                        </svg>
+                    </div>
+                    <div class="font-bold text-xs text-ink leading-tight">${item.name}</div>
+                    <span class="mt-1 text-[10px] px-2 py-0.5 rounded-full ${item.isEco ? 'bg-moss/15 text-moss' : 'bg-terracotta/15 text-terracotta'} font-medium">
+                        ${item.tag}
+                    </span>
+                </button>
+            `).join('');
+        }
+
+        // 通用服飾 SVG 繪製器 (供階段一預覽與階段四工作台共用)
+        function drawGarmentSVG(garmentLayer, guidesLayer, opts) {
+            const patObj = PATTERNS.find(p => p.id === opts.patternId) || PATTERNS[0];
+            const dyeObj = DYES.find(d => d.id === opts.dyeId) || DYES[0];
+            const dmgObj = DAMAGES.find(d => d.id === opts.damageId) || DAMAGES[0];
+
+            const baseFill = dyeObj.hex ? dyeObj.hex : patObj.baseHex;
+            const patternOverlay = patObj.overlayUrl;
+            const isCrop = opts.cutId === 'cropped_cut';
+            const isAsym = opts.cutId === 'asym_hem';
+
+            let shapePath = '';
+            let detailSVG = '';
+            let cutGuideSVG = '';
+
+            if (opts.garmentId === 'jeans') {
+                const leftY = isCrop ? 305 : (isAsym ? 355 : 395);
+                const rightY = isCrop ? 305 : 395;
+                shapePath = `M115,40 L285,40 L305,150 L310,${rightY} L215,${rightY} L200,195 L185,${leftY} L90,${leftY} L95,150 Z`;
+                detailSVG = `
+                    <path d="M115,40 L285,40 L288,62 L112,62 Z" fill="rgba(0,0,0,0.18)" stroke="#1D3557" stroke-width="2.5"/>
+                    <rect x="135" y="38" width="8" height="26" fill="#1D3557" rx="1"/>
+                    <rect x="257" y="38" width="8" height="26" fill="#1D3557" rx="1"/>
+                    <circle cx="200" cy="51" r="5" fill="#C8963E" stroke="#5C3D12" stroke-width="1.5"/>
+                    <path d="M200,62 L200,145 Q188,145 188,125" fill="none" stroke="#F7F4EC" stroke-width="1.5" stroke-dasharray="4,3"/>
+                    <path d="M113,85 Q145,105 152,62" fill="none" stroke="#F7F4EC" stroke-width="1.5" stroke-dasharray="4,3"/>
+                    <path d="M287,85 Q255,105 248,62" fill="none" stroke="#F7F4EC" stroke-width="1.5" stroke-dasharray="4,3"/>
+                `;
+                if (isCrop) {
+                    cutGuideSVG = `<line x1="75" y1="305" x2="325" y2="305" stroke="#D96B43" stroke-width="2" stroke-dasharray="6,4"/>
+                                   <text x="80" y="297" fill="#D96B43" font-size="11" font-weight="bold">✂ 短版七分剪裁線 (產生 19% 碎布)</text>`;
+                } else if (isAsym) {
+                    cutGuideSVG = `<line x1="80" y1="355" x2="195" y2="355" stroke="#D96B43" stroke-width="2" stroke-dasharray="6,4"/>
+                                   <text x="80" y="347" fill="#D96B43" font-size="11" font-weight="bold">✂ 左褲管不對稱解構下擺</text>`;
+                }
+            } else if (opts.garmentId === 'tee') {
+                const leftY = isCrop ? 265 : (isAsym ? 320 : 375);
+                const rightY = isCrop ? 265 : 375;
+                shapePath = `M145,45 Q200,80 255,45 L315,65 L365,155 L315,185 L290,140 L290,${rightY} L110,${leftY} L110,140 L85,185 L35,155 L85,65 Z`;
+                detailSVG = `
+                    <path d="M145,45 Q200,80 255,45 Q200,92 145,45 Z" fill="#D8D1C0" stroke="#1D3557" stroke-width="2"/>
+                `;
+                if (isCrop) {
+                    cutGuideSVG = `<line x1="95" y1="265" x2="305" y2="265" stroke="#D96B43" stroke-width="2" stroke-dasharray="6,4"/>
+                                   <text x="125" y="257" fill="#D96B43" font-size="11" font-weight="bold">✂ 短版 Crop 剪裁線</text>`;
+                } else if (isAsym) {
+                    cutGuideSVG = `<line x1="95" y1="320" x2="305" y2="375" stroke="#D96B43" stroke-width="2" stroke-dasharray="6,4"/>
+                                   <text x="125" y="315" fill="#D96B43" font-size="11" font-weight="bold">✂ 斜向不對稱下擺剪裁</text>`;
+                }
+            } else if (opts.garmentId === 'shirt') {
+                const leftY = isCrop ? 275 : (isAsym ? 330 : 380);
+                const rightY = isCrop ? 275 : 380;
+                shapePath = `M150,42 L250,42 L310,65 L355,245 L315,258 L285,135 L285,${rightY} L115,${leftY} L115,135 L85,258 L45,245 L90,65 Z`;
+                detailSVG = `
+                    <polygon points="150,42 200,72 168,95 142,58" fill="rgba(255,255,255,0.15)" stroke="#1D3557" stroke-width="2"/>
+                    <polygon points="250,42 200,72 232,95 258,58" fill="rgba(255,255,255,0.15)" stroke="#1D3557" stroke-width="2"/>
+                    <line x1="200" y1="72" x2="200" y2="${Math.min(leftY, rightY)}" stroke="#1D3557" stroke-width="2"/>
+                    <circle cx="200" cy="110" r="4" fill="#F7F4EC" stroke="#1D3557" stroke-width="1.5"/>
+                    <circle cx="200" cy="160" r="4" fill="#F7F4EC" stroke="#1D3557" stroke-width="1.5"/>
+                    <circle cx="200" cy="210" r="4" fill="#F7F4EC" stroke="#1D3557" stroke-width="1.5"/>
+                `;
+                if (isCrop) {
+                    cutGuideSVG = `<line x1="100" y1="275" x2="300" y2="275" stroke="#D96B43" stroke-width="2" stroke-dasharray="6,4"/>`;
+                }
+            } else if (opts.garmentId === 'tote') {
+                const bottomY = isCrop ? 315 : 380;
+                shapePath = `M100,130 L300,130 L310,${bottomY} L90,${bottomY} Z`;
+                detailSVG = `
+                    <path d="M145,135 L145,65 Q145,35 200,35 Q255,35 255,65 L255,135" fill="none" stroke="#24221F" stroke-width="14" stroke-linecap="round"/>
+                    <path d="M145,135 L145,65 Q145,35 200,35 Q255,35 255,65 L255,135" fill="none" stroke="#D8D1C0" stroke-width="8" stroke-linecap="round"/>
+                    <line x1="100" y1="152" x2="300" y2="152" stroke="#F7F4EC" stroke-width="1.5" stroke-dasharray="5,3"/>
+                `;
+            }
+
+            // 組合底色 + 花紋疊加層 + 細節線條
+            garmentLayer.innerHTML = `
+                <path d="${shapePath}" fill="${baseFill}" stroke="#1D3557" stroke-width="3" stroke-linejoin="round"/>
+                ${patternOverlay ? `<path d="${shapePath}" fill="${patternOverlay}" pointer-events="none"/>` : ''}
+                ${detailSVG}
+            `;
+
+            // 破損或舊化視覺標記
+            let damageSVG = '';
+            if (opts.damageId !== 'oversized_intact') {
+                const opacity = opts.isRepaired ? '0.25' : '0.9';
+                if (opts.damageId === 'knee_rip') {
+                    damageSVG = `
+                        <g transform="translate(${dmgObj.targetX}, ${dmgObj.targetY})" opacity="${opacity}">
+                            <ellipse cx="0" cy="0" rx="22" ry="12" fill="#E7ECE8" stroke="#1D3557" stroke-width="1.5" stroke-dasharray="3,2"/>
+                            <line x1="-18" y1="-4" x2="18" y2="-4" stroke="#F7F4EC" stroke-width="1.5"/>
+                            <line x1="-20" y1="2" x2="20" y2="2" stroke="#F7F4EC" stroke-width="1.5"/>
+                            <line x1="-15" y1="7" x2="15" y2="7" stroke="#F7F4EC" stroke-width="1.5"/>
+                            ${!opts.isRepaired ? `<text x="0" y="-17" text-anchor="middle" fill="#D96B43" font-size="10" font-weight="bold">破洞待修補</text>` : ''}
+                        </g>`;
+                } else if (opts.damageId === 'collar_fade') {
+                    damageSVG = `
+                        <g transform="translate(${dmgObj.targetX}, ${dmgObj.targetY})" opacity="${opacity}">
+                            <ellipse cx="0" cy="0" rx="34" ry="16" fill="#E9D8A6" opacity="0.55"/>
+                            ${!opts.isRepaired ? `<text x="0" y="26" text-anchor="middle" fill="#D96B43" font-size="10" font-weight="bold">泛黃褪色區</text>` : ''}
+                        </g>`;
+                } else if (opts.damageId === 'coffee_stain') {
+                    damageSVG = `
+                        <g transform="translate(${dmgObj.targetX}, ${dmgObj.targetY})" opacity="${opacity}">
+                            <path d="M-15,-8 Q0,-20 16,-6 Q24,10 8,18 Q-12,22 -18,6 Z" fill="#582F0E" opacity="0.55"/>
+                            ${!opts.isRepaired ? `<text x="0" y="-22" text-anchor="middle" fill="#D96B43" font-size="10" font-weight="bold">污漬待遮瑕</text>` : ''}
+                        </g>`;
+                }
+            }
+
+            guidesLayer.innerHTML = cutGuideSVG + damageSVG;
+        }
+
+        function renderWorkbenchGarment() {
+            const isRepaired = checkDamageCovered();
+            drawGarmentSVG(
+                document.getElementById('wb-garment-layer'),
+                document.getElementById('wb-guides-layer'),
+                {
+                    garmentId: state.garment,
+                    patternId: state.pattern,
+                    dyeId: state.appliedDye,
+                    cutId: state.appliedCut,
+                    damageId: state.damage,
+                    isRepaired
+                }
+            );
+            updateRepairBadge(isRepaired);
+        }
+
+        // 檢查玩家是否有把拼布貼片移動到破損區域上進行修補
+        function checkDamageCovered() {
+            if (state.damage === 'oversized_intact') return true;
+            const dmg = DAMAGES.find(d => d.id === state.damage);
+            if (!dmg) return true;
+
+            // 若染深色可遮蓋泛黃
+            if (state.damage === 'collar_fade' && state.appliedDye !== 'none') return true;
+
+            // 檢查是否有任一貼片中心點落在破損點 48px 半徑內
+            return state.patches.some(p => {
+                const dist = Math.hypot(p.x - dmg.targetX, p.y - dmg.targetY);
+                return dist <= 52 * p.scale;
+            });
+        }
+
+        function updateRepairBadge(isRepaired) {
+            const badge = document.getElementById('repair-status-badge');
+            if (state.damage === 'oversized_intact') {
+                badge.textContent = '✨ 衣況完整 · 自由創意改造中';
+                badge.className = 'text-xs font-bold px-2.5 py-1 rounded-full bg-moss/15 text-moss';
+            } else if (isRepaired) {
+                badge.textContent = '✅ 破損/污漬已成功修補覆蓋 (+環保加分)';
+                badge.className = 'text-xs font-bold px-2.5 py-1 rounded-full bg-moss/15 text-moss';
+            } else {
+                const dmg = DAMAGES.find(d => d.id === state.damage);
+                badge.textContent = `⚠️ 請拖曳拼布覆蓋「${dmg.name}」`;
+                badge.className = 'text-xs font-bold px-2.5 py-1 rounded-full bg-terracotta/15 text-terracotta';
+            }
+        }
+
+        function addPatchToWorkbench(assetId) {
+            if (state.patches.length >= 15) {
+                showToast('畫布上最多放置 15 件拼貼素材，適度留白更能展現工藝質感喔！', '⚠️');
+                return;
+            }
+            const uid = 'p_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+            const offset = (state.patches.length % 5) * 12 - 24;
+            state.patches.push({
+                uid,
+                assetId,
+                x: 200 + offset,
+                y: 215 + offset,
+                scale: 1,
+                rotation: 0
+            });
+            state.selectedPatchUid = uid;
+            renderWorkbenchPatches();
+            renderWorkbenchGarment();
+        }
+
+        function autoPlaceRecommendedPatches() {
+            const dmg = DAMAGES.find(d => d.id === state.damage);
+            const fabs = state.aiRecommendation.recommendedFabricIds;
+            const accs = state.aiRecommendation.recommendedAccessoryIds;
+
+            state.patches = [
+                { uid: 'p_ai_1', assetId: fabs[0] || 'fab_indigo', x: dmg.targetX, y: dmg.targetY, scale: 1.05, rotation: -6 },
+                { uid: 'p_ai_2', assetId: fabs[1] || 'fab_hakka', x: 245, y: 155, scale: 0.9, rotation: 8 },
+                { uid: 'p_ai_3', assetId: accs[0] || 'acc_embroidery', x: 155, y: 145, scale: 0.95, rotation: 0 }
+            ];
+            state.selectedPatchUid = state.patches[0].uid;
+            renderWorkbenchPatches();
+            renderWorkbenchGarment();
+            showToast('已為你排布 AI 示範拼貼配置，你可以繼續自由拖曳調整！', '🪄');
+        }
+
+        function clearWorkbenchPatches() {
+            state.patches = [];
+            state.selectedPatchUid = null;
+            renderWorkbenchPatches();
+            renderWorkbenchGarment();
+        }
+
+        function renderWorkbenchPatches() {
+            const layer = document.getElementById('wb-patches-layer');
+            const gizmoLayer = document.getElementById('wb-gizmo-layer');
+            layer.innerHTML = '';
+            gizmoLayer.innerHTML = '';
+
+            state.patches.forEach(p => {
+                const mat = findMaterialById(p.assetId);
+                if (!mat) return;
+
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.setAttribute('transform', `translate(${p.x}, ${p.y}) rotate(${p.rotation}) scale(${p.scale})`);
+                g.classList.add('draggable-item');
+                g.innerHTML = mat.renderSVG();
+
+                // 使用 Pointer Events 統一處理滑鼠與觸控拖曳
+                g.addEventListener('pointerdown', (e) => onPatchPointerDown(e, p.uid));
+                layer.appendChild(g);
+
+                // 選取外框
+                if (p.uid === state.selectedPatchUid) {
+                    const box = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                    box.setAttribute('transform', `translate(${p.x}, ${p.y}) rotate(${p.rotation}) scale(${p.scale})`);
+                    box.innerHTML = `
+                        <rect x="-54" y="-44" width="108" height="88" rx="8" fill="none" stroke="#D96B43" stroke-width="2" stroke-dasharray="5,3"/>
+                        <circle cx="-54" cy="-44" r="4" fill="#D96B43"/>
+                        <circle cx="54" cy="-44" r="4" fill="#D96B43"/>
+                        <circle cx="-54" cy="44" r="4" fill="#D96B43"/>
+                        <circle cx="54" cy="44" r="4" fill="#D96B43"/>
+                    `;
+                    gizmoLayer.appendChild(box);
+                }
+            });
+
+            document.getElementById('wb-patch-count').textContent = `已放置: ${state.patches.length} 件`;
+            syncWorkbenchControls();
+        }
+
+        function syncWorkbenchControls() {
+            const noSel = document.getElementById('wb-no-selection');
+            const activeCtrl = document.getElementById('wb-active-controls');
+            const sel = state.patches.find(p => p.uid === state.selectedPatchUid);
+
+            if (!sel) {
+                noSel.classList.remove('hidden');
+                activeCtrl.classList.add('hidden');
+                return;
+            }
+
+            noSel.classList.add('hidden');
+            activeCtrl.classList.remove('hidden');
+
+            const mat = findMaterialById(sel.assetId);
+            document.getElementById('wb-selected-name').textContent = mat ? mat.name : '已選素材';
+            document.getElementById('wb-ctrl-scale').value = sel.scale;
+            document.getElementById('wb-ctrl-rotate').value = sel.rotation;
+        }
+
+        function onSliderTransform() {
+            const sel = state.patches.find(p => p.uid === state.selectedPatchUid);
+            if (!sel) return;
+            sel.scale = parseFloat(document.getElementById('wb-ctrl-scale').value);
+            sel.rotation = parseInt(document.getElementById('wb-ctrl-rotate').value, 10);
+            renderWorkbenchPatches();
+            renderWorkbenchGarment();
+        }
+
+        function nudgeTransform(prop, delta) {
+            const sel = state.patches.find(p => p.uid === state.selectedPatchUid);
+            if (!sel) return;
+            if (prop === 'scale') {
+                sel.scale = Math.max(0.45, Math.min(2.2, +(sel.scale + delta).toFixed(2)));
+            } else if (prop === 'rotation') {
+                let nextRot = sel.rotation + delta;
+                if (nextRot > 180) nextRot -= 360;
+                if (nextRot < -180) nextRot += 360;
+                sel.rotation = nextRot;
+            }
+            renderWorkbenchPatches();
+            renderWorkbenchGarment();
+        }
+
+        function changePatchLayer(dir) {
+            const idx = state.patches.findIndex(p => p.uid === state.selectedPatchUid);
+            if (idx === -1) return;
+            const target = idx + dir;
+            if (target < 0 || target >= state.patches.length) return;
+            const tmp = state.patches[idx];
+            state.patches[idx] = state.patches[target];
+            state.patches[target] = tmp;
+            renderWorkbenchPatches();
+        }
+
+        function removeSelectedPatch() {
+            if (!state.selectedPatchUid) return;
+            state.patches = state.patches.filter(p => p.uid !== state.selectedPatchUid);
+            state.selectedPatchUid = state.patches[state.patches.length - 1]?.uid || null;
+            renderWorkbenchPatches();
+            renderWorkbenchGarment();
+        }
+
+        // 精準 SVG 座標轉換 (支援響應式縮放)
+        function clientToSVGCoords(clientX, clientY) {
+            const svg = document.getElementById('workbench-svg');
+            const rect = svg.getBoundingClientRect();
+            return {
+                x: ((clientX - rect.left) / rect.width) * 400,
+                y: ((clientY - rect.top) / rect.height) * 430
+            };
+        }
+
+        function onPatchPointerDown(e, uid) {
+            e.stopPropagation();
+            state.selectedPatchUid = uid;
+            state.isDragging = true;
+
+            const pt = clientToSVGCoords(e.clientX, e.clientY);
+            const patch = state.patches.find(p => p.uid === uid);
+            if (patch) {
+                state.dragOffset = { x: pt.x - patch.x, y: pt.y - patch.y };
+            }
+            renderWorkbenchPatches();
+        }
+
+        function setupWorkbenchInteractions() {
+            const bg = document.getElementById('wb-bg-deselect');
+            bg.addEventListener('pointerdown', () => {
+                state.selectedPatchUid = null;
+                renderWorkbenchPatches();
+            });
+
+            window.addEventListener('pointermove', (e) => {
+                if (!state.isDragging || !state.selectedPatchUid) return;
+                const pt = clientToSVGCoords(e.clientX, e.clientY);
+                const patch = state.patches.find(p => p.uid === state.selectedPatchUid);
+                if (patch) {
+                    patch.x = Math.max(35, Math.min(365, Math.round(pt.x - state.dragOffset.x)));
+                    patch.y = Math.max(35, Math.min(395, Math.round(pt.y - state.dragOffset.y)));
+                    renderWorkbenchPatches();
+                    renderWorkbenchGarment();
+                }
+            });
+
+            window.addEventListener('pointerup', () => {
+                state.isDragging = false;
+            });
+        }
+
+        /* ============================================================================
+           7. 階段五：環境永續正負向深度評估與海報結算
+           ============================================================================ */
+        function finishAndEvaluate() {
+            goToStage(5);
+        }
+
+        function generateSustainabilityReport() {
+            const gObj = GARMENTS.find(g => g.id === state.garment);
+            const fObj = FABRICS.find(f => f.id === state.fabric);
+            const dObj = DAMAGES.find(d => d.id === state.damage);
+            const dyeObj = DYES.find(d => d.id === state.appliedDye);
+            const cutObj = CUTS.find(c => c.id === state.appliedCut);
+
+            let ecoScore = 62; // 選擇舊衣改造而非購買快時尚新衣的基礎永續分
+            const positiveNotes = [];
+            const negativeNotes = [];
+
+            // 1. 基礎舊衣再生效益
+            positiveNotes.push(`<strong>舊衣重製替代新購：</strong>賦予這件「${gObj.name}」第二次生命，直接省去全新棉花種植與成衣製造的高額水足跡與碳排。`);
+
+            // 2. 材質環境評估
+            ecoScore += fObj.ecoScore;
+            if (fObj.isSynthetic) {
+                negativeNotes.push(`<strong>混紡聚酯纖維微塑膠風險：</strong>基底衣物含有石化合成聚酯纖維，在剪裁與日常機洗過程中容易釋放微塑膠纖維，建議搭配集纖洗衣袋洗滌。`);
+            } else {
+                positiveNotes.push(`<strong>100% 天然單一纖維優勢：</strong>基底為「${fObj.name.split(' ')[0]}」，不含石化微塑膠且未來生命週期結束時具備良好的生物可分解性。`);
+            }
+
+            // 3. 破損修補判定
+            const isRepaired = checkDamageCovered();
+            if (dObj.id !== 'oversized_intact') {
+                if (isRepaired) {
+                    ecoScore += 10;
+                    positiveNotes.push(`<strong>成功修補結構破損：</strong>你運用拼布或植物染巧妙覆蓋了「${dObj.name}」，有效防止織物繼續撕裂，預估延長衣物使用壽命 2.5 年以上。`);
+                } else {
+                    ecoScore -= 6;
+                    negativeNotes.push(`<strong>破損部位尚未完全加固：</strong>原本的「${dObj.name}」未被拼布貼片覆蓋，日常穿著時破損處可能持續擴大，建議返回工作台補上一塊拼布！`);
+                }
+            }
+
+            // 4. 染劑環境評估
+            ecoScore += dyeObj.ecoBonus;
+            if (dyeObj.id === 'none') {
+                positiveNotes.push(`<strong>零染整水污染：</strong>保留舊衣原始底色不額外浸染，節省了 100% 的染整用水與加熱能源。`);
+            } else if (dyeObj.isNatural) {
+                positiveNotes.push(`<strong>台灣天然植物染工藝：</strong>選用「${dyeObj.name.split(' ')[0]}」，以植物萃取替代化學合成染料，無重金屬與有毒廢水排放。`);
+            } else {
+                negativeNotes.push(`<strong>化學洗水耗水負擔：</strong>「${dyeObj.name.split(' ')[0]}」雖能創造強烈視覺對比，但酸洗做舊製程會消耗額外水資源與化學助劑。`);
+            }
+
+            // 5. 剪裁版型邊角料評估
+            ecoScore += cutObj.ecoDelta;
+            if (cutObj.wastePct <= 5) {
+                positiveNotes.push(`<strong>零廢棄版型設計：</strong>採用「${cutObj.name.split(' ')[0]}」，邊角料耗損率僅 <strong>${cutObj.wastePct}%</strong>，最大化珍惜每一寸現有布料。`);
+            } else if (cutObj.wastePct >= 15) {
+                negativeNotes.push(`<strong>剪裁邊角料廢棄率偏高 (${cutObj.wastePct}%)：</strong>選擇「${cutObj.name.split(' ')[0]}」裁掉了較多原衣布料，請務必將裁下的碎布收集製作成杯墊、髮圈或拼布貼片！`);
+            } else {
+                positiveNotes.push(`<strong>適度解構剪裁：</strong>「${cutObj.name.split(' ')[0]}」在造型變化與布料利用率之間取得了不錯的平衡（耗損率 ${cutObj.wastePct}%）。`);
+            }
+
+            // 6. 拼布與配件材料評估
+            let ecoPatchCount = 0;
+            let nonEcoAccCount = 0;
+            state.patches.forEach(p => {
+                const mat = findMaterialById(p.assetId);
+                if (!mat) return;
+                ecoScore += mat.ecoDelta;
+                if (mat.isEco) ecoPatchCount++;
+                else nonEcoAccCount++;
+            });
+
+            if (ecoPatchCount > 0) {
+                positiveNotes.push(`<strong>在地工藝與再生拼布加分：</strong>使用了 <strong>${ecoPatchCount} 件</strong>台灣天然染織拼布、再生丹寧或易拆卸金屬扣件，支持在地紡織工藝傳承。`);
+            }
+            if (nonEcoAccCount > 0) {
+                negativeNotes.push(`<strong>異材質與熱熔膠回收警訊：</strong>使用了 <strong>${nonEcoAccCount} 件</strong>合成亮面熱熔膠燙貼或塑膠插扣。異材質過度黏合會增加未來舊衣回收廠的拆解難度，建議改用可拆卸別針或純棉刺繡！`);
+            }
+
+            if (negativeNotes.length === 0) {
+                negativeNotes.push(`<strong>幾近完美的循環設計！</strong>本次改造幾乎沒有明顯的環境負面代價，繼續保持這份對土地友善的設計思維。`);
+            }
+
+            ecoScore = Math.max(25, Math.min(100, ecoScore));
+
+            // 更新 UI 數據
+            let grade = 'A 級永續創作者';
+            if (ecoScore >= 90) grade = 'S+ 零廢棄永續工藝大師';
+            else if (ecoScore >= 80) grade = 'S 級永續重製設計師';
+            else if (ecoScore >= 65) grade = 'A 級循環時尚設計師';
+            else grade = 'B 級見習改造師';
+
+            document.getElementById('report-grade-badge').textContent = grade;
+            document.getElementById('stat-eco-score').textContent = ecoScore;
+
+            const efficiency = (100 - cutObj.wastePct) / 100;
+            const savedWater = Math.round(gObj.water * efficiency);
+            const savedCarbon = (gObj.carbon * efficiency).toFixed(1);
+            const extraYears = (1.5 + (ecoScore / 100) * 1.8).toFixed(1);
+
+            document.getElementById('stat-lifespan').textContent = `+${extraYears} 年`;
+            document.getElementById('stat-water').textContent = `${savedWater.toLocaleString()} L`;
+            document.getElementById('stat-carbon').textContent = `${savedCarbon} kg`;
+
+            document.getElementById('positive-impact-list').innerHTML = positiveNotes.map(n => 
+                `<li class="flex items-start gap-2 leading-relaxed"><span class="text-moss font-bold shrink-0">✓</span><div>${n}</div></li>`
+            ).join('');
+
+            document.getElementById('negative-impact-list').innerHTML = negativeNotes.map(n => 
+                `<li class="flex items-start gap-2 leading-relaxed"><span class="text-terracotta font-bold shrink-0">!</span><div>${n}</div></li>`
+            ).join('');
+
+            // 複製工作台 SVG 到結算海報 (移除選取虛線外框)
+            const clonedSvg = document.getElementById('workbench-svg').cloneNode(true);
+            const gizmo = clonedSvg.querySelector('#wb-gizmo-layer');
+            if (gizmo) gizmo.innerHTML = '';
+            const container = document.getElementById('poster-svg-container');
+            container.innerHTML = '';
+            container.appendChild(clonedSvg);
+
+            // 海報文字紀錄
+            const mainMat = state.patches.length > 0 ? findMaterialById(state.patches[0].assetId).name : '永續重製';
+            document.getElementById('poster-theme-tag').textContent = state.themeTag;
+            document.getElementById('poster-artwork-title').textContent = `${mainMat} × ${gObj.name}`;
+            document.getElementById('poster-garment-meta').textContent = `基底：${fObj.name.split(' ')[0]} · 染製：${dyeObj.name.split(' ')[0]} · 剪裁：${cutObj.name.split(' ')[0]}`;
+            document.getElementById('poster-prompt-record').textContent = `「${state.designPrompt}」`;
+        }
+
+        function resetAndStartNew() {
+            state.patches = [];
+            state.selectedPatchUid = null;
+            state.appliedDye = 'none';
+            state.appliedCut = 'zero_waste_patch';
+            goToStage(1);
+            showToast('已重置工作台，請挑選下一件要改造的舊衣物！', '👕');
+        }
+    </script>
+</body>
+</html>
