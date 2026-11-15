@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>舊衣重生工坊：AI 永續改造企劃 | Upcycle Studio AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        paper: '#F7F4EC',
+                        paperDark: '#ECE6D5',
+                        denim: '#2B4C7E',
+                        denimDark: '#1D3557',
+                        moss: '#3D6B52',
+                        mossLight: '#5C8D73',
+                        terracotta: '#D96B43',
+                        ochre: '#C8963E',
+                        ink: '#24221F',
+                        mutedInk: '#686259'
+                    },
+                    fontFamily: {
+                        serif: ['"Noto Serif TC"', 'serif'],
+                        sans: ['"Noto Sans TC"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #F7F4EC;
+            color: #24221F;
+            font-family: 'Noto Sans TC', sans-serif;
+            background-image: 
+                radial-gradient(#D5CEBE 0.8px, transparent 0.8px),
+                radial-gradient(#D5CEBE 0.8px, #F7F4EC 0.8px);
+            background-size: 26px 26px;
+            background-position: 0 0, 13px 13px;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        .washi-tape {
+            background-color: rgba(200, 150, 62, 0.35);
+            border-left: 2px dashed rgba(255, 255, 255, 0.6);
+            border-right: 2px dashed rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(1px);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        .cutting-mat {
+            background-color: #E7ECE8;
+            background-image: 
+                linear-gradient(to right, rgba(61, 107, 82, 0.11) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(61, 107, 82, 0.11) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .draggable-item {
+            cursor: grab;
+        }
+        .draggable-item:active {
+            cursor: grabbing;
+        }
+
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(450%); }
+        }
+        .ai-scan {
+            animation: scanline 1.5s ease-in-out infinite;
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #ECE6D5; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #B5AC9A; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #8C8272; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- 全局 SVG 紋理庫 -->
+    <svg width="0" height="0" class="hidden" aria-hidden="true">
+        <defs>
+            <pattern id="overlay-acid-wash" width="30" height="30" patternUnits="userSpaceOnUse">
+                <circle cx="8" cy="10" r="6" fill="#FFFFFF" opacity="0.14"/>
+                <circle cx="22" cy="22" r="8" fill="#FFFFFF" opacity="0.12"/>
+                <path d="M0 15 Q15 10 30 15" stroke="#FFFFFF" stroke-width="1.5" fill="none" opacity="0.18"/>
+            </pattern>
+            <pattern id="overlay-pinstripe" width="10" height="10" patternUnits="userSpaceOnUse">
+                <line x1="3" y1="0" x2="3" y2="10" stroke="#FFFFFF" stroke-width="1.2" opacity="0.35"/>
+                <line x1="8" y1="0" x2="8" y2="10" stroke="#000000" stroke-width="0.6" opacity="0.2"/>
+            </pattern>
+            <pattern id="overlay-classic-check" width="28" height="28" patternUnits="userSpaceOnUse">
+                <rect x="0" y="0" width="14" height="28" fill="#000000" opacity="0.14"/>
+                <rect x="0" y="0" width="28" height="14" fill="#000000" opacity="0.14"/>
+                <line x1="7" y1="0" x2="7" y2="28" stroke="#F7F4EC" stroke-width="1" opacity="0.45"/>
+            </pattern>
+            <pattern id="overlay-tie-dye" width="44" height="44" patternUnits="userSpaceOnUse">
+                <circle cx="22" cy="22" r="18" fill="none" stroke="#FFFFFF" stroke-width="2.5" opacity="0.22"/>
+                <circle cx="22" cy="22" r="11" fill="none" stroke="#FFFFFF" stroke-width="2" opacity="0.28"/>
+            </pattern>
+            <pattern id="pat-indigo-dye" width="40" height="40" patternUnits="userSpaceOnUse">
+                <rect width="40" height="40" fill="#183A5A" />
+                <circle cx="20" cy="20" r="16" fill="none" stroke="#4D80B3" stroke-width="3" opacity="0.75" />
+                <circle cx="20" cy="20" r="10" fill="none" stroke="#8EB8E5" stroke-width="2" opacity="0.85" />
+            </pattern>
+            <pattern id="pat-hakka-floral" width="36" height="36" patternUnits="userSpaceOnUse">
+                <rect width="36" height="36" fill="#C92A3E" />
+                <circle cx="18" cy="18" r="11" fill="#F26B8A" />
+                <circle cx="18" cy="18" r="7" fill="#FAD2E1" />
+            </pattern>
+            <pattern id="pat-indigenous-weave" width="24" height="24" patternUnits="userSpaceOnUse">
+                <rect width="24" height="24" fill="#1F1D1B" />
+                <polygon points="12,2 22,12 12,22 2,12" fill="none" stroke="#D93829" stroke-width="2.5" />
+                <polygon points="12,7 17,12 12,17 7,12" fill="#F4F1EA" />
+            </pattern>
+            <pattern id="pat-recycled-denim" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                <rect width="16" height="16" fill="#5D84A6" />
+                <line x1="0" y1="0" x2="0" y2="16" stroke="#85A9C7" stroke-width="4" />
+                <line x1="8" y1="0" x2="8" y2="16" stroke="#3B5D7A" stroke-width="3" />
+            </pattern>
+            <pattern id="pat-yam-dye" width="20" height="20" patternUnits="userSpaceOnUse">
+                <rect width="20" height="20" fill="#7F4F24" />
+                <path d="M0 10 Q5 5 10 10 T20 10" fill="none" stroke="#A66A38" stroke-width="2" />
+            </pattern>
+        </defs>
+    </svg>
+
+    <!-- 頂部導覽列 -->
+    <header id="app-header" class="hidden bg-paper/95 backdrop-blur-sm border-b-2 border-stone-300 sticky top-0 z-40 px-3 sm:px-6 py-2 shadow-xs">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+            <button onclick="goToStage(0)" class="flex items-center gap-2 text-left group cursor-pointer">
+                <div class="w-8 h-8 rounded-xl bg-denim text-paper flex items-center justify-center font-bold">♻</div>
+                <div>
+                    <div class="font-serif font-bold text-sm sm:text-base text-ink leading-none">舊衣重生工坊</div>
+                    <div class="text-[9px] text-moss font-bold tracking-wider mt-0.5">UPCYCLE STUDIO AI</div>
+                </div>
+            </button>
+
+            <!-- 5 階段進度導覽 (手機端簡化顯示) -->
+            <nav class="flex items-center gap-1 overflow-x-auto py-1">
+                <button onclick="goToStage(1)" id="nav-stage-1" class="px-2 py-1 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer">1.選衣</button>
+                <span class="text-stone-400 text-xs">›</span>
+                <button onclick="goToStage(2)" id="nav-stage-2" class="px-2 py-1 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer">2.提示詞</button>
+                <span class="text-stone-400 text-xs">›</span>
+                <button onclick="goToStage(3)" id="nav-stage-3" class="px-2 py-1 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer">3.AI提案</button>
+                <span class="text-stone-400 text-xs">›</span>
+                <button onclick="goToStage(4)" id="nav-stage-4" class="px-2 py-1 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer">4.工作台</button>
+                <span class="text-stone-400 text-xs">›</span>
+                <button onclick="goToStage(5)" id="nav-stage-5" class="px-2 py-1 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer">5.結算</button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Toast 提示框 -->
+    <div id="toast-box" class="fixed bottom-4 right-4 z-50 transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="bg-ink text-paper px-4 py-2.5 rounded-2xl shadow-xl border border-stone-600 flex items-center gap-2 max-w-xs">
+            <span id="toast-icon" class="text-ochre">✦</span>
+            <p id="toast-msg" class="text-xs font-medium"></p>
+        </div>
+    </div>
+
+    <!-- ================= 階段 0：封面 ================= -->
+    <main id="stage-0" class="flex-1 flex items-center justify-center p-4 sm:p-6">
+        <div class="max-w-4xl w-full bg-paper rounded-3xl shadow-2xl border-2 border-stone-300 overflow-hidden p-6 sm:p-10 text-center">
+            <div class="inline-block px-3 py-1 rounded-full bg-moss/15 text-moss text-xs font-bold mb-3">🌿 輕量化介面・手機與桌機皆宜</div>
+            <h1 class="font-serif font-black text-3xl sm:text-5xl text-ink mb-4">舊衣重生工坊 <span class="text-denim">AI 改造企劃</span></h1>
+            <p class="text-xs sm:text-sm text-mutedInk max-w-xl mx-auto mb-6">
+                輕鬆挑選舊衣、一鍵下達風格提示，在直覺的 SVG 互動工作台中自由拖曳拼布、完美修補污漬與破損！
+            </p>
+            <button onclick="goToStage(1)" class="px-8 py-4 rounded-2xl bg-denim hover:bg-denimDark text-white font-bold text-base shadow-lg transition cursor-pointer">
+                開始改造舊衣 →
+            </button>
+        </div>
+    </main>
+
+    <!-- ================= 階段 1：選衣與細節 ================= -->
+    <section id="stage-1" class="hidden flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+            <div class="lg:col-span-5 bg-white rounded-3xl p-4 shadow border border-stone-300 sticky top-16">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="font-serif font-bold text-base text-ink">即時預覽</h2>
+                    <span id="preview-eco-badge" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-moss/15 text-moss">純棉基底</span>
+                </div>
+                <div class="cutting-mat w-full aspect-[4/4] rounded-2xl border-2 border-moss/20 flex items-center justify-center relative overflow-hidden">
+                    <svg id="stage1-preview-svg" viewBox="0 0 400 420" class="w-full h-full">
+                        <g id="stage1-garment-layer"></g>
+                        <g id="stage1-damage-layer"></g>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="lg:col-span-7 bg-white rounded-3xl p-5 sm:p-6 shadow border border-stone-300 space-y-5">
+                <h3 class="font-serif font-bold text-lg text-ink">1. 設定待改造舊衣細節</h3>
+                <div>
+                    <label class="block text-xs font-bold text-denim mb-1.5">服飾種類</label>
+                    <div id="opt-garments" class="grid grid-cols-2 sm:grid-cols-4 gap-2"></div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-denim mb-1.5">布料材質</label>
+                    <div id="opt-fabrics" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-denim mb-1.5">花紋與底色</label>
+                    <div id="opt-patterns" class="grid grid-cols-5 gap-1.5"></div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-denim mb-1.5">破損與污漬狀況</label>
+                    <div id="opt-damages" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+                </div>
+                <div class="pt-3 border-t flex justify-end">
+                    <button onclick="goToStage(2)" class="px-6 py-3 rounded-2xl bg-denim text-white font-bold text-sm cursor-pointer hover:bg-denimDark">下一步：下達提示詞 →</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= 階段 2：給 AI 提示詞 ================= -->
+    <section id="stage-2" class="hidden flex-1 max-w-3xl w-full mx-auto p-4 sm:p-6">
+        <div class="bg-white rounded-3xl p-6 shadow border border-stone-300 relative">
+            <div id="ai-thinking-modal" class="hidden absolute inset-0 z-30 bg-denimDark/95 backdrop-blur-sm flex flex-col items-center justify-center text-paper p-6 text-center rounded-3xl">
+                <div class="text-4xl mb-3 animate-bounce">🤖🧵</div>
+                <h3 class="font-serif font-bold text-xl text-amber-200 mb-2">AI 正在解析你的改造需求...</h3>
+                <p id="ai-thinking-step" class="text-xs text-paper/90 mb-3">配對台灣在地工藝材料與修補方案...</p>
+                <div class="w-48 h-2 bg-white/20 rounded-full overflow-hidden">
+                    <div id="ai-thinking-bar" class="h-full bg-ochre transition-all duration-300" style="width: 30%"></div>
+                </div>
+            </div>
+
+            <h2 class="font-serif font-bold text-xl text-ink mb-3">2. 向 AI 傳達你的改造靈感</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-ink mb-1">主題標籤 (Theme Tag)</label>
+                    <input id="input-theme-tag" type="text" value="#台灣在地工藝" class="w-full px-3 py-2 rounded-xl bg-paper border text-sm font-bold text-denim">
+                    <div class="flex flex-wrap gap-1 mt-1.5">
+                        <button onclick="setThemeTag('#台灣在地工藝')" class="px-2.5 py-0.5 rounded-full bg-moss/10 text-moss text-xs font-bold cursor-pointer">#台灣在地工藝</button>
+                        <button onclick="setThemeTag('#Y2K千禧辣妹')" class="px-2.5 py-0.5 rounded-full bg-denim/10 text-denim text-xs font-bold cursor-pointer">#Y2K千禧辣妹</button>
+                        <button onclick="setThemeTag('#文青日系拼布')" class="px-2.5 py-0.5 rounded-full bg-stone-200 text-ink text-xs font-bold cursor-pointer">#文青日系拼布</button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-ink mb-1">具體提示詞 (Design Prompt)</label>
+                    <textarea id="input-design-prompt" rows="3" class="w-full px-3 py-2 rounded-xl bg-paper border text-xs leading-relaxed">希望把破損處修補完美，加入三峽藍染元素與刺繡工藝。</textarea>
+                </div>
+                <div class="flex justify-between items-center pt-2 border-t">
+                    <button onclick="goToStage(1)" class="px-4 py-2 rounded-xl bg-stone-200 text-xs font-bold cursor-pointer">← 返回</button>
+                    <button onclick="submitPromptToAI()" class="px-6 py-3 rounded-2xl bg-moss text-white text-sm font-bold cursor-pointer hover:bg-emerald-800">✨ 生成 AI 材料提案</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= 階段 3：AI 材料提案 ================= -->
+    <section id="stage-3" class="hidden flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6">
+        <div class="bg-white rounded-3xl p-6 shadow border border-stone-300 space-y-5">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h2 class="font-serif font-bold text-xl text-ink">3. AI 專屬改造提案</h2>
+                <span id="blueprint-theme-badge" class="px-3 py-1 rounded-full bg-denim/10 text-denim text-xs font-bold">#台灣在地工藝</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-paper p-4 rounded-2xl border">
+                    <div class="text-xs font-bold text-denim mb-1">推薦剪裁方案</div>
+                    <h3 id="bp-cut-title" class="font-serif font-bold text-base text-ink mb-1">零廢棄拼布補丁法</h3>
+                    <p id="bp-cut-desc" class="text-xs text-mutedInk leading-relaxed"></p>
+                </div>
+                <div class="bg-paper p-4 rounded-2xl border">
+                    <div class="text-xs font-bold text-moss mb-1">推薦染劑與色調</div>
+                    <h3 id="bp-dye-title" class="font-serif font-bold text-base text-ink mb-1">大菁天然藍染</h3>
+                    <p id="bp-dye-desc" class="text-xs text-mutedInk leading-relaxed mb-2"></p>
+                    <div id="bp-dye-swatches" class="flex flex-wrap gap-1.5"></div>
+                </div>
+            </div>
+            <div class="flex justify-end pt-2">
+                <button onclick="enterWorkbench()" class="px-7 py-3.5 rounded-2xl bg-denim text-white font-bold text-sm cursor-pointer hover:bg-denimDark">
+                    ✂️ 進入互動工作台開始改造 →
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= 階段 4：自由改造工作台 ================= -->
+    <section id="stage-4" class="hidden flex-1 max-w-7xl w-full mx-auto p-3 sm:p-4">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
+            
+            <!-- 左欄：染劑與剪裁 -->
+            <div class="lg:col-span-3 space-y-3">
+                <div class="bg-white rounded-2xl p-3 shadow border">
+                    <h3 class="font-serif font-bold text-xs text-ink mb-2">🎨 染劑翻新</h3>
+                    <div id="wb-dye-list" class="space-y-1"></div>
+                </div>
+                <div class="bg-white rounded-2xl p-3 shadow border">
+                    <h3 class="font-serif font-bold text-xs text-ink mb-2">✂️ 剪裁版型</h3>
+                    <div id="wb-cut-list" class="space-y-1.5"></div>
+                </div>
+            </div>
+
+            <!-- 中央欄：SVG 畫布與手機友善微調工具列 -->
+            <div class="lg:col-span-6 flex flex-col gap-3">
+                <div class="bg-white rounded-3xl p-3 shadow border">
+                    <!-- 修補狀態提示 -->
+                    <div class="flex justify-between items-center pb-2 mb-2 border-b">
+                        <span id="repair-status-badge" class="text-xs font-bold px-2.5 py-1 rounded-full bg-terracotta/15 text-terracotta">
+                            ⚠️ 破損處尚未修補
+                        </span>
+                        <button onclick="autoPlaceRecommendedPatches()" class="text-xs px-2.5 py-1 rounded-lg bg-denim/10 text-denim font-bold cursor-pointer">
+                            🪄 一鍵修補示範
+                        </button>
+                    </div>
+
+                    <!-- 畫布本體 -->
+                    <div class="cutting-mat w-full aspect-[4/4.3] max-h-[460px] rounded-2xl border-2 border-moss/30 relative overflow-hidden touch-none">
+                        <svg id="workbench-svg" viewBox="0 0 400 430" class="w-full h-full select-none">
+                            <rect id="wb-bg-deselect" x="0" y="0" width="400" height="430" fill="transparent" />
+                            <g id="wb-garment-layer"></g>
+                            <g id="wb-guides-layer" pointer-events="none"></g>
+                            <g id="wb-patches-layer"></g>
+                            <g id="wb-gizmo-layer" pointer-events="none"></g>
+                        </svg>
+                    </div>
+
+                    <!-- 手機端友善的物件微調控制列 (解決手機不好拖曳縮放的問題) -->
+                    <div class="mt-2.5 bg-paperDark rounded-2xl p-2.5 border">
+                        <div id="wb-no-selection" class="text-center text-xs text-mutedInk py-1">
+                            👆 點擊畫布上的拼布或配件即可選取並微調
+                        </div>
+                        <div id="wb-active-controls" class="hidden space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span id="wb-selected-name" class="text-xs font-bold text-denim">已選素材</span>
+                                <div class="flex gap-1">
+                                    <button onclick="changePatchLayer(1)" class="px-2 py-0.5 bg-white border text-xs rounded cursor-pointer">↑</button>
+                                    <button onclick="changePatchLayer(-1)" class="px-2 py-0.5 bg-white border text-xs rounded cursor-pointer">↓</button>
+                                    <button onclick="removeSelectedPatch()" class="px-2 py-0.5 bg-red-600 text-white text-xs rounded cursor-pointer">刪除</button>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 text-xs items-center">
+                                <div class="flex items-center gap-1">
+                                    <span>大小</span>
+                                    <input id="wb-ctrl-scale" type="range" min="0.5" max="2" step="0.1" value="1" oninput="onSliderTransform()" class="w-full accent-denim cursor-pointer">
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <span>旋轉</span>
+                                    <input id="wb-ctrl-rotate" type="range" min="-180" max="180" step="10" value="0" oninput="onSliderTransform()" class="w-full accent-denim cursor-pointer">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="finishAndEvaluate()" class="w-full py-3.5 px-6 rounded-2xl bg-moss hover:bg-emerald-800 text-white font-bold text-sm shadow transition cursor-pointer">
+                    🌿 完成改造，生成結算報告 →
+                </button>
+            </div>
+
+            <!-- 右欄：材料庫 -->
+            <div class="lg:col-span-3 bg-white rounded-2xl p-3 shadow border flex flex-col max-h-[600px]">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="font-serif font-bold text-xs text-ink">🧵 拼貼材料庫</h3>
+                    <button id="btn-toggle-pool" onclick="toggleMaterialPoolMode()" class="text-[10px] font-bold px-2 py-0.5 rounded bg-ochre/20 text-amber-900 cursor-pointer">切換全部</button>
+                </div>
+                <div class="grid grid-cols-2 gap-1 bg-paper p-1 rounded-xl mb-2 text-xs font-bold">
+                    <button id="wb-tab-fabrics" onclick="switchWorkbenchTab('fabrics')" class="py-1 rounded bg-denim text-white cursor-pointer">布料</button>
+                    <button id="wb-tab-accessories" onclick="switchWorkbenchTab('accessories')" class="py-1 rounded text-mutedInk cursor-pointer">配件</button>
+                </div>
+                <div id="wb-asset-grid" class="grid grid-cols-2 gap-2 overflow-y-auto pr-1 flex-1"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= 階段 5：環境結算報告 ================= -->
+    <section id="stage-5" class="hidden flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6">
+        <div class="bg-paper rounded-3xl shadow-2xl border-2 border-stone-300 overflow-hidden p-6 sm:p-8 space-y-6">
+            <div class="bg-moss text-paper px-5 py-3 rounded-2xl flex justify-between items-center">
+                <div>
+                    <div class="text-[10px] uppercase tracking-widest text-amber-200 font-bold">UPCYCLE IMPACT REPORT</div>
+                    <h2 class="font-serif font-bold text-lg sm:text-xl">舊衣改造與永續結算</h2>
+                </div>
+                <div id="report-grade-badge" class="bg-amber-300 text-ink font-serif font-black px-3 py-1 rounded-xl text-sm shadow">
+                    S 級永續設計師
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                <div class="bg-white p-3 rounded-2xl border shadow-2xs">
+                    <div class="text-[10px] text-mutedInk">永續綜合評分</div>
+                    <div id="stat-eco-score" class="font-serif font-black text-2xl text-moss">88</div>
+                </div>
+                <div class="bg-white p-3 rounded-2xl border shadow-2xs">
+                    <div class="text-[10px] text-mutedInk">延長衣物壽命</div>
+                    <div id="stat-lifespan" class="font-serif font-black text-xl text-denim">+2.8 年</div>
+                </div>
+                <div class="bg-white p-3 rounded-2xl border shadow-2xs">
+                    <div class="text-[10px] text-mutedInk">預估節省水量</div>
+                    <div id="stat-water" class="font-serif font-black text-xl text-denim">2,580 L</div>
+                </div>
+                <div class="bg-white p-3 rounded-2xl border shadow-2xs">
+                    <div class="text-[10px] text-mutedInk">碳排減量效益</div>
+                    <div id="stat-carbon" class="font-serif font-black text-xl text-moss">6.9 kg</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-white p-4 rounded-2xl border border-moss/30 space-y-1.5">
+                    <h4 class="font-serif font-bold text-sm text-moss">🌱 正向環境效益</h4>
+                    <ul id="positive-impact-list" class="space-y-1 text-xs text-ink"></ul>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-terracotta/30 space-y-1.5">
+                    <h4 class="font-serif font-bold text-sm text-terracotta">⚠️ 注意事項與隱憂</h4>
+                    <ul id="negative-impact-list" class="space-y-1 text-xs text-ink"></ul>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="goToStage(4)" class="px-4 py-2.5 rounded-xl bg-white border text-xs font-bold cursor-pointer">← 返回工作台微調</button>
+                <button onclick="resetAndStartNew()" class="px-5 py-2.5 rounded-xl bg-denim text-white text-xs font-bold cursor-pointer">🔄 重新改造下一件</button>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        const GARMENTS = [
+            { id: 'jeans', name: '寬版丹寧褲', icon: '👖', water: 2700, carbon: 7.2 },
+            { id: 'tee', name: 'Oversized 白T', icon: '👕', water: 1800, carbon: 4.5 },
+            { id: 'shirt', name: '舊格紋襯衫', icon: '👔', water: 2200, carbon: 5.8 },
+            { id: 'tote', name: '帆布托特包', icon: '👜', water: 1400, carbon: 3.4 }
+        ];
+
+        const FABRICS = [
+            { id: 'cotton_denim', name: '純棉丹寧', isSynthetic: false, ecoScore: 10 },
+            { id: 'heavy_cotton', name: '厚磅純棉針織', isSynthetic: false, ecoScore: 10 },
+            { id: 'flannel_cotton', name: '法蘭絨格紋布', isSynthetic: false, ecoScore: 9 },
+            { id: 'poly_blend', name: '聚酯混紡纖維', isSynthetic: true, ecoScore: -6 }
+        ];
+
+        const PATTERNS = [
+            { id: 'solid_raw', name: '素面', baseHex: '#3B5978', overlayUrl: '', swatchBg: '#3B5978' },
+            { id: 'acid_wash', name: '水洗', baseHex: '#5A7694', overlayUrl: 'url(#overlay-acid-wash)', swatchBg: '#5A7694' },
+            { id: 'pinstripe', name: '條紋', baseHex: '#2C3E50', overlayUrl: 'url(#overlay-pinstripe)', swatchBg: '#2C3E50' },
+            { id: 'classic_check', name: '格紋', baseHex: '#8C3B2B', overlayUrl: 'url(#overlay-classic-check)', swatchBg: '#8C3B2B' },
+            { id: 'tie_dye', name: '扎染', baseHex: '#4A6FA5', overlayUrl: 'url(#overlay-tie-dye)', swatchBg: '#4A6FA5' }
+        ];
+
+        const DAMAGES = [
+            { id: 'knee_rip', name: '膝蓋破損破洞', targetX: 155, targetY: 255 },
+            { id: 'collar_fade', name: '領口泛黃褪色', targetX: 200, targetY: 115 },
+            { id: 'coffee_stain', name: '局部咖啡污漬', targetX: 235, targetY: 195 },
+            { id: 'oversized_intact', name: '結構完整無破損', targetX: 200, targetY: 220 }
+        ];
+
+        const DYES = [
+            { id: 'none', name: '保留原始底色', hex: null, isNatural: true, ecoBonus: 6 },
+            { id: 'sanxia_indigo', name: '三峽植物藍染', hex: '#1B436B', isNatural: true, ecoBonus: 4 },
+            { id: 'taiwan_yam', name: '薯榔大地褐染', hex: '#7A4928', isNatural: true, ecoBonus: 4 },
+            { id: 'cyber_charcoal', name: '碳黑酸洗做舊', hex: '#2B2D30', isNatural: false, ecoBonus: -4 }
+        ];
+
+        const CUTS = [
+            { id: 'zero_waste_patch', name: '零廢棄拼布補丁', wastePct: 3, ecoDelta: 14, badge: '耗損 3%' },
+            { id: 'asym_hem', name: '不對稱下擺解構', wastePct: 11, ecoDelta: 4, badge: '耗損 11%' },
+            { id: 'cropped_cut', name: '俐落短版剪裁', wastePct: 19, ecoDelta: -8, badge: '耗損 19%' }
+        ];
+
+        const MATERIALS = {
+            fabrics: [
+                { id: 'fab_indigo', name: '三峽藍染雲紋', type: 'fabrics', isEco: true, ecoDelta: 5, tag: '藍染', renderSVG: () => `<rect x="-35" y="-25" width="70" height="50" rx="4" fill="url(#pat-indigo-dye)" stroke="#FFF" stroke-width="1.5"/>` },
+                { id: 'fab_hakka', name: '客家花布拼布', type: 'fabrics', isEco: true, ecoDelta: 5, tag: '花布', renderSVG: () => `<rect x="-35" y="-25" width="70" height="50" rx="4" fill="url(#pat-hakka-floral)" stroke="#FFF" stroke-width="1.5"/>` },
+                { id: 'fab_indigenous', name: '原民幾何織帶', type: 'fabrics', isEco: true, ecoDelta: 5, tag: '織帶', renderSVG: () => `<rect x="-50" y="-12" width="100" height="24" rx="2" fill="url(#pat-indigenous-weave)" stroke="#C8963E" stroke-width="1.5"/>` },
+                { id: 'fab_recycled_denim', name: '回收丹寧格紋', type: 'fabrics', isEco: true, ecoDelta: 6, tag: '再生', renderSVG: () => `<rect x="-30" y="-30" width="60" height="60" rx="4" fill="url(#pat-recycled-denim)" stroke="#1D3557" stroke-width="1.5"/>` }
+            ],
+            accessories: [
+                { id: 'acc_embroidery', name: '手工十字刺繡', type: 'accessories', isEco: true, ecoDelta: 4, tag: '刺繡', renderSVG: () => `<g stroke="#C8963E" stroke-width="2.5"><line x1="-14" y1="-14" x2="14" y2="14"/><line x1="14" y1="-14" x2="-14" y2="14"/></g><circle cx="0" cy="0" r="5" fill="#D96B43"/>` },
+                { id: 'acc_brass_buttons', name: '復古黃銅鈕扣', type: 'accessories', isEco: true, ecoDelta: 2, tag: '金屬', renderSVG: () => `<circle cx="0" cy="0" r="9" fill="#C8963E" stroke="#5C3D12" stroke-width="1.5"/>` },
+                { id: 'acc_safety_pin', name: '龐克安全別針', type: 'accessories', isEco: true, ecoDelta: 1, tag: '配件', renderSVG: () => `<rect x="-22" y="-6" width="44" height="12" rx="6" fill="none" stroke="#94A3B8" stroke-width="3"/>` }
+            ]
+        };
+
+        let state = {
+            currentStage: 0,
+            garment: 'jeans',
+            fabric: 'cotton_denim',
+            pattern: 'acid_wash',
+            damage: 'knee_rip',
+            themeTag: '#台灣在地工藝',
+            designPrompt: '希望把破損處完美修補，加入藍染與刺繡。',
+            aiRecommendation: { cutId: 'zero_waste_patch', dyeId: 'sanxia_indigo', recommendedFabricIds: ['fab_indigo', 'fab_hakka'], recommendedAccessoryIds: ['acc_embroidery', 'acc_brass_buttons'] },
+            appliedDye: 'none',
+            appliedCut: 'zero_waste_patch',
+            poolMode: 'ai',
+            wbTab: 'fabrics',
+            patches: [],
+            selectedPatchUid: null,
+            isDragging: false,
+            dragOffset: { x: 0, y: 0 }
+        };
+
+        window.onload = function () {
+            renderStage1UI();
+            setupWorkbenchInteractions();
+        };
+
+        function showToast(msg, icon = '✦') {
+            const box = document.getElementById('toast-box');
+            document.getElementById('toast-msg').textContent = msg;
+            document.getElementById('toast-icon').textContent = icon;
+            box.classList.remove('translate-y-24', 'opacity-0');
+            clearTimeout(window.toastTimer);
+            window.toastTimer = setTimeout(() => box.classList.add('translate-y-24', 'opacity-0'), 2500);
+        }
+
+        function goToStage(n) {
+            state.currentStage = n;
+            for (let i = 0; i <= 5; i++) {
+                const el = document.getElementById(`stage-${i}`);
+                if (el) el.classList.add('hidden');
+            }
+            document.getElementById('app-header').classList.toggle('hidden', n === 0);
+            document.getElementById(`stage-${n}`).classList.remove('hidden');
+            updateTopNav(n);
+
+            if (n === 1) renderStage1UI();
+            if (n === 4) { renderWorkbenchSidebars(); renderWorkbenchGarment(); renderWorkbenchPatches(); }
+            if (n === 5) generateSustainabilityReport();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function updateTopNav(active) {
+            for (let i = 1; i <= 5; i++) {
+                const btn = document.getElementById(`nav-stage-${i}`);
+                if (btn) btn.className = `px-2 py-1 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer ${i === active ? 'bg-denim text-white' : 'bg-stone-200 text-mutedInk'}`;
+            }
+        }
+
+        function renderStage1UI() {
+            document.getElementById('opt-garments').innerHTML = GARMENTS.map(g => `
+                <button onclick="setStage1Prop('garment', '${g.id}')" class="p-2.5 rounded-xl border-2 text-left cursor-pointer ${state.garment === g.id ? 'border-denim bg-denim/10' : 'border-stone-200'}">
+                    <div class="text-xl">${g.icon}</div>
+                    <div class="font-bold text-xs">${g.name}</div>
+                </button>`).join('');
+
+            document.getElementById('opt-fabrics').innerHTML = FABRICS.map(f => `
+                <button onclick="setStage1Prop('fabric', '${f.id}')" class="p-2.5 rounded-xl border-2 text-left cursor-pointer ${state.fabric === f.id ? 'border-moss bg-moss/10' : 'border-stone-200'}">
+                    <div class="font-bold text-xs">${f.name}</div>
+                    <div class="text-[10px] ${f.isSynthetic ? 'text-terracotta' : 'text-moss'}">${f.isSynthetic ? '含合成纖維' : '100% 天然'}</div>
+                </button>`).join('');
+
+            document.getElementById('opt-patterns').innerHTML = PATTERNS.map(p => `
+                <button onclick="setStage1Prop('pattern', '${p.id}')" class="p-1.5 rounded-xl border-2 flex flex-col items-center cursor-pointer ${state.pattern === p.id ? 'border-denim bg-denim/10' : 'border-stone-200'}">
+                    <span class="w-6 h-6 rounded-full border mb-1" style="background:${p.swatchBg}"></span>
+                    <span class="text-[10px] font-bold">${p.name}</span>
+                </button>`).join('');
+
+            document.getElementById('opt-damages').innerHTML = DAMAGES.map(d => `
+                <button onclick="setStage1Prop('damage', '${d.id}')" class="p-2.5 rounded-xl border-2 text-left cursor-pointer ${state.damage === d.id ? 'border-terracotta bg-terracotta/10' : 'border-stone-200'}">
+                    <div class="font-bold text-xs">${d.name}</div>
+                </button>`).join('');
+
+            updateStage1Preview();
+        }
+
+        function setStage1Prop(key, val) { state[key] = val; renderStage1UI(); }
+
+        function updateStage1Preview() {
+            drawGarmentSVG(document.getElementById('stage1-garment-layer'), document.getElementById('stage1-damage-layer'), {
+                garmentId: state.garment, patternId: state.pattern, dyeId: 'none', cutId: 'zero_waste_patch', damageId: state.damage, isRepaired: false
+            });
+        }
+
+        function setThemeTag(tag) { document.getElementById('input-theme-tag').value = tag; state.themeTag = tag; }
+
+        function submitPromptToAI() {
+            const modal = document.getElementById('ai-thinking-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                goToStage(3);
+                renderStage3Blueprint();
+            }, 800);
+        }
+
+        function renderStage3Blueprint() {
+            document.getElementById('blueprint-theme-badge').textContent = state.themeTag;
+            document.getElementById('bp-cut-title').textContent = '零廢棄拼布補丁法';
+            document.getElementById('bp-cut-desc').textContent = '精準覆蓋破損處，邊角料耗損降至最低。';
+            document.getElementById('bp-dye-title').textContent = '大菁天然藍染浸染';
+            document.getElementById('bp-dye-desc').textContent = '完美遮蓋泛黃並增添工藝質感。';
+            document.getElementById('bp-dye-swatches').innerHTML = DYES.map(d => `
+                <button onclick="state.appliedDye='${d.id}'; showToast('已套用染劑');" class="px-2.5 py-1 rounded-lg border text-xs font-bold bg-white cursor-pointer hover:border-denim">
+                    ${d.name.split(' ')[0]}
+                </button>`).join('');
+        }
+
+        function enterWorkbench() {
+            goToStage(4);
+            if (state.patches.length === 0) {
+                const dmg = DAMAGES.find(d => d.id === state.damage);
+                state.patches.push({ uid: 'p_1', assetId: 'fab_indigo', x: dmg.targetX, y: dmg.targetY, scale: 1, rotation: 0 });
+                state.selectedPatchUid = 'p_1';
+            }
+        }
+
+        function renderWorkbenchSidebars() {
+            document.getElementById('wb-dye-list').innerHTML = DYES.map(d => `
+                <button onclick="applyWbDye('${d.id}')" class="w-full p-1.5 rounded-lg border text-left text-xs font-bold cursor-pointer ${state.appliedDye === d.id ? 'border-denim bg-denim/10' : 'border-stone-200'}">
+                    ${d.name}
+                </button>`).join('');
+
+            document.getElementById('wb-cut-list').innerHTML = CUTS.map(c => `
+                <button onclick="applyWbCut('${c.id}')" class="w-full p-2 rounded-lg border text-left text-xs font-bold cursor-pointer ${state.appliedCut === c.id ? 'border-denim bg-denim/10' : 'border-stone-200'}">
+                    ${c.name} <span class="text-moss">(${c.badge})</span>
+                </button>`).join('');
+
+            renderWbAssetGrid();
+        }
+
+        function applyWbDye(id) { state.appliedDye = id; renderWorkbenchSidebars(); renderWorkbenchGarment(); }
+        function applyWbCut(id) { state.appliedCut = id; renderWorkbenchSidebars(); renderWorkbenchGarment(); }
+
+        function toggleMaterialPoolMode() {
+            state.poolMode = state.poolMode === 'ai' ? 'all' : 'ai';
+            renderWbAssetGrid();
+        }
+
+        function switchWorkbenchTab(tab) {
+            state.wbTab = tab;
+            document.getElementById('wb-tab-fabrics').className = `py-1 rounded cursor-pointer ${tab==='fabrics'?'bg-denim text-white':'text-mutedInk'}`;
+            document.getElementById('wb-tab-accessories').className = `py-1 rounded cursor-pointer ${tab==='accessories'?'bg-denim text-white':'text-mutedInk'}`;
+            renderWbAssetGrid();
+        }
+
+        function renderWbAssetGrid() {
+            const list = MATERIALS[state.wbTab] || [];
+            document.getElementById('wb-asset-grid').innerHTML = list.map(item => `
+                <button onclick="addPatch('${item.id}')" class="p-2 rounded-xl bg-paper border hover:border-denim flex flex-col items-center cursor-pointer">
+                    <svg viewBox="-50 -35 100 70" class="w-12 h-10 overflow-visible">${item.renderSVG()}</svg>
+                    <span class="text-[10px] font-bold mt-1 text-ink">${item.name}</span>
+                </button>`).join('');
+        }
+
+        function drawGarmentSVG(gLayer, dLayer, opts) {
+            const pat = PATTERNS.find(p => p.id === opts.patternId) || PATTERNS[0];
+            const dye = DYES.find(d => d.id === opts.dyeId) || DYES[0];
+            const dmg = DAMAGES.find(d => d.id === opts.damageId) || DAMAGES[0];
+            const baseFill = dye.hex || pat.baseHex;
+            const isCrop = opts.cutId === 'cropped_cut';
+
+            const path = opts.garmentId === 'jeans' ? `M115,40 L285,40 L305,150 L310,${isCrop?305:395} L215,${isCrop?305:395} L200,195 L185,${isCrop?305:395} L90,${isCrop?305:395} L95,150 Z` :
+                         `M145,45 Q200,80 255,45 L315,65 L365,155 L315,185 L290,140 L290,${isCrop?265:375} L110,${isCrop?265:375} L110,140 L85,185 L35,155 L85,65 Z`;
+
+            gLayer.innerHTML = `<path d="${path}" fill="${baseFill}" stroke="#1D3557" stroke-width="2.5" stroke-linejoin="round"/>`;
+
+            let dSVG = '';
+            if (opts.damageId !== 'oversized_intact') {
+                const rep = opts.isRepaired;
+                dSVG = `<g transform="translate(${dmg.targetX}, ${dmg.targetY})" opacity="${rep?0.3:0.9}">
+                    <ellipse cx="0" cy="0" rx="20" ry="10" fill="${rep?'#3D6B52':'#E7ECE8'}" stroke="#1D3557" stroke-width="1.5"/>
+                    <text x="0" y="-14" text-anchor="middle" fill="${rep?'#3D6B52':'#D96B43'}" font-size="10" font-weight="bold">${rep?'✓ 已修補':'⚠️ 破損處'}</text>
+                </g>`;
+            }
+            dLayer.innerHTML = dSVG;
+        }
+
+        function renderWorkbenchGarment() {
+            const repaired = checkDamageCovered();
+            drawGarmentSVG(document.getElementById('wb-garment-layer'), document.getElementById('wb-guides-layer'), {
+                garmentId: state.garment, patternId: state.pattern, dyeId: state.appliedDye, cutId: state.appliedCut, damageId: state.damage, isRepaired: repaired
+            });
+            const badge = document.getElementById('repair-status-badge');
+            badge.textContent = repaired ? '✅ 破損處已成功修補覆蓋！' : '⚠️ 請將拼布拖曳至破損處進行修補';
+            badge.className = `text-xs font-bold px-2.5 py-1 rounded-full ${repaired ? 'bg-moss/15 text-moss' : 'bg-terracotta/15 text-terracotta'}`;
+        }
+
+        function checkDamageCovered() {
+            if (state.damage === 'oversized_intact' || (state.damage === 'collar_fade' && state.appliedDye !== 'none')) return true;
+            const dmg = DAMAGES.find(d => d.id === state.damage);
+            return state.patches.some(p => Math.hypot(p.x - dmg.targetX, p.y - dmg.targetY) <= 50 * p.scale);
+        }
+
+        function addPatch(assetId) {
+            const uid = 'p_' + Date.now();
+            state.patches.push({ uid, assetId, x: 200, y: 210, scale: 1, rotation: 0 });
+            state.selectedPatchUid = uid;
+            renderWorkbenchPatches();
+            renderWorkbenchGarment();
+            showToast('已新增拼貼素材', '🧵');
+        }
+
+        function autoPlaceRecommendedPatches() {
+            const dmg = DAMAGES.find(d => d.id === state.damage);
+            state.patches = [{ uid: 'p_auto', assetId: 'fab_indigo', x: dmg.targetX, y: dmg.targetY, scale: 1.1, rotation: 0 }];
+            state.selectedPatchUid = 'p_auto';
+            renderWorkbenchPatches();
+            renderWorkbenchGarment();
+            showToast('已自動完成修補排布！', '🪄');
+        }
+
+        function renderWorkbenchPatches() {
+            const layer = document.getElementById('wb-patches-layer');
+            const gizmo = document.getElementById('wb-gizmo-layer');
+            layer.innerHTML = '';
+            gizmo.innerHTML = '';
+
+            state.patches.forEach(p => {
+                const mat = [...MATERIALS.fabrics, ...MATERIALS.accessories].find(m => m.id === p.assetId);
+                if (!mat) return;
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.setAttribute('transform', `translate(${p.x}, ${p.y}) rotate(${p.rotation}) scale(${p.scale})`);
+                g.classList.add('draggable-item');
+                g.innerHTML = mat.renderSVG();
+                g.addEventListener('pointerdown', (e) => { e.stopPropagation(); state.selectedPatchUid = p.uid; state.isDragging = true; renderWorkbenchPatches(); });
+                layer.appendChild(g);
+
+                if (p.uid === state.selectedPatchUid) {
+                    const box = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                    box.setAttribute('transform', `translate(${p.x}, ${p.y}) rotate(${p.rotation}) scale(${p.scale})`);
+                    box.innerHTML = `<rect x="-42" y="-32" width="84" height="64" rx="4" fill="none" stroke="#D96B43" stroke-width="2" stroke-dasharray="4,2"/>`;
+                    gizmo.appendChild(box);
+                }
+            });
+            syncControls();
+        }
+
+        function syncControls() {
+            const noSel = document.getElementById('wb-no-selection');
+            const active = document.getElementById('wb-active-controls');
+            const sel = state.patches.find(p => p.uid === state.selectedPatchUid);
+            if (!sel) { noSel.classList.remove('hidden'); active.classList.add('hidden'); return; }
+            noSel.classList.add('hidden');
+            active.classList.remove('hidden');
+            document.getElementById('wb-ctrl-scale').value = sel.scale;
+            document.getElementById('wb-ctrl-rotate').value = sel.rotation;
+        }
+
+        function onSliderTransform() {
+            const sel = state.patches.find(p => p.uid === state.selectedPatchUid);
+            if (!sel) return;
+            sel.scale = parseFloat(document.getElementById('wb-ctrl-scale').value);
+            sel.rotation = parseInt(document.getElementById('wb-ctrl-rotate').value, 10);
+            renderWorkbenchPatches();
+        }
+
+        function changePatchLayer(dir) {
+            const idx = state.patches.findIndex(p => p.uid === state.selectedPatchUid);
+            if (idx === -1) return;
+            const target = idx + dir;
+            if (target >= 0 && target < state.patches.length) {
+                const tmp = state.patches[idx];
+                state.patches[idx] = state.patches[target];
+                state.patches[target] = tmp;
+                renderWorkbenchPatches();
+            }
+        }
+
+        function removeSelectedPatch() {
+            state.patches = state.patches.filter(p => p.uid !== state.selectedPatchUid);
+            state.selectedPatchUid = null;
+            renderWorkbenchPatches();
+            renderWorkbenchGarment();
+        }
+
+        function setupWorkbenchInteractions() {
+            document.getElementById('wb-bg-deselect').addEventListener('pointerdown', () => { state.selectedPatchUid = null; renderWorkbenchPatches(); });
+            window.addEventListener('pointermove', (e) => {
+                if (!state.isDragging || !state.selectedPatchUid) return;
+                const svg = document.getElementById('workbench-svg');
+                const rect = svg.getBoundingClientRect();
+                const patch = state.patches.find(p => p.uid === state.selectedPatchUid);
+                if (patch) {
+                    patch.x = Math.max(40, Math.min(360, ((e.clientX - rect.left) / rect.width) * 400));
+                    patch.y = Math.max(40, Math.min(390, ((e.clientY - rect.top) / rect.height) * 430));
+                    renderWorkbenchPatches();
+                    renderWorkbenchGarment();
+                }
+            });
+            window.addEventListener('pointerup', () => state.isDragging = false);
+        }
+
+        function finishAndEvaluate() { goToStage(5); }
+
+        function generateSustainabilityReport() {
+            const repaired = checkDamageCovered();
+            let score = repaired ? 88 : 70;
+            document.getElementById('stat-eco-score').textContent = score;
+            document.getElementById('positive-impact-list').innerHTML = `
+                <li>✓ 選擇舊衣重製，節省了水資源與碳排放。</li>
+                ${repaired ? '<li>✓ 完美修補破損處，有效延長衣物壽命。</li>' : ''}
+            `;
+            document.getElementById('negative-impact-list').innerHTML = repaired ? `
+                <li>✓ 無明顯環境隱憂，循環設計表現優異！</li>
+            ` : `
+                <li>⚠️ 破損處尚未完全覆蓋修補，建議返回工作台補上貼片。</li>
+            `;
+        }
+
+        function resetAndStartNew() {
+            state.patches = [];
+            state.selectedPatchUid = null;
+            goToStage(1);
+        }
+    </script>
+</body>
+</html>
